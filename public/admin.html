@@ -1,0 +1,37 @@
+<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ylläpito – Mattorundi</title><link rel="stylesheet" href="styles.css"></head><body>
+<header class="top"><div class="wrap"><a class="logo" href="/"><b>MATTO</b>RUNDI</a><nav><a class="btn btn-g btn-s" href="/sopimus">Myyjä: kirjaa sopimus</a></nav></div></header>
+<section><div class="wrap">
+<div id="login" class="card" style="max-width:360px"><h2>Ylläpito</h2><label>PIN</label><input id="pin" type="password"><p><button class="btn btn-g" onclick="login()">Kirjaudu</button></p><p id="lmsg"></p></div>
+<div id="app" style="display:none">
+<h2>Kapasiteetti – seuraavat 4 viikkoa</h2>
+<p class="lead" style="font-size:15px">Miten laskenta toimii: matot pestään saapumisjärjestyksessä. Joka työpäivä pestään <b id="e1"></b> mattoa (pesu alkaa noutoa seuraavana työpäivänä), ja pesty matto kuivuu, kunnes noudosta on kulunut vähintään <b id="e2"></b> päivää. Kun jonossa on paljon mattoja, palautus siirtyy myöhemmäksi. Noutopäivä suljetaan, jos päivän noutokiintiö (<b id="e3"></b>) ylittyisi tai varastossa olisi jonain päivänä yli <b id="e4"></b> mattoa.</p>
+<div class="card" style="overflow:auto"><table id="capt"></table></div>
+<h2 style="margin-top:40px">Tilaukset</h2><p><a href="/paperisopimus" target="_blank">Tulosta paperisopimuspohja</a> · <a href="#" onclick="exp();return false">Lataa kaikki tiedot (JSON-varmuuskopio)</a></p>
+<div class="card" style="overflow:auto;padding:0"><table id="ot"></table></div>
+<h2 style="margin-top:40px">Asetukset</h2>
+<form id="sf" class="card" style="max-width:760px">
+<div class="row"><div><label>Noutoja enintään / päivä (mattoa)</label><input name="maxPickupPerDay" type="number"></div><div><label>Varaston kokonaiskapasiteetti (mattoa)</label><input name="storageCapacity" type="number"></div></div>
+<div class="row"><div><label>Pesu + kuivaus vähintään (päivää)</label><input name="turnaroundDays" type="number"></div><div><label>Pesukapasiteetti / työpäivä (mattoa) <small id="wk"></small></label><input name="washPerDay" type="number" step="0.5"></div></div>
+<label>Työpäivät</label><div id="wd" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+<div class="row3"><div><label>Hinta keskikok. €</label><input name="priceMedium" type="number" step="0.01"></div><div><label>Hinta iso €</label><input name="priceLarge" type="number" step="0.01"></div><div><label>ALV %</label><input name="vatPct" type="number" step="0.1"></div></div>
+<label>Myyjäkoodit (pilkulla erotettuna)</label><input name="sellerCodes">
+<p id="smsg"></p><button class="btn btn-g">Tallenna asetukset</button></form>
+<div class="card" style="margin-top:30px;max-width:760px"><h3>Google Kalenteri (tulossa)</h3><p>Synkronointi on suunniteltu lisättäväksi myöhemmin: jokaisesta tilauksesta luodaan nouto- ja palautustapahtuma yhteiseen kalenteriin (Google Calendar API, palvelutili). Tilaukset sisältävät jo kaikki tarvittavat kentät (päivä, aika, osoite, mattomäärä).</p></div>
+</div></div></section>
+<script src="common.js"></script><script>
+let PIN=new URLSearchParams(location.search).get('pin')||sessionStorage.pin||'';const H=()=>({headers:{'x-admin-pin':PIN}});const DN=['ma','ti','ke','to','pe','la','su'];
+async function login(){PIN=$('#pin').value||PIN;try{await load();sessionStorage.pin=PIN;$('#login').style.display='none';$('#app').style.display=''}catch(e){$('#lmsg').innerHTML='<span class="err">'+e.message+'</span>'}}
+async function load(){const c=await api('/api/admin/capacity',H());const s=c.settings;
+$('#e1').textContent=s.washPerDay;$('#e2').textContent=s.turnaroundDays;$('#e3').textContent=s.maxPickupPerDay;$('#e4').textContent=s.storageCapacity;
+$('#capt').innerHTML='<tr><th>Päivä</th><th>Noudot</th><th>Palautukset</th><th>Varastossa</th><th style="width:40%">Varaston täyttö</th></tr>'+c.days.map(d=>{const p=Math.min(100,Math.round(d.storage/s.storageCapacity*100));return`<tr style="${d.work?'':'color:#9aa5ae'}"><td>${fmtD(d.date)}</td><td>${d.pickups}/${d.work?s.maxPickupPerDay:'–'}</td><td>${d.returns}</td><td>${d.storage}</td><td><div class="bar"><i class="${p>85?'hot':''}" style="width:${p}%"></i></div></td></tr>`}).join('');
+const o=await api('/api/admin/orders',H());o.sort((a,b)=>a.pickupDate.localeCompare(b.pickupDate));
+$('#ot').innerHTML='<tr><th>Nro</th><th>Asiakas</th><th>Matot</th><th>Summa</th><th>Nouto</th><th>Palautus (arvio)</th><th>Maksu</th><th>Kanava</th><th>Tila</th></tr>'+o.map(x=>`<tr><td><a href="/vahvistus?id=${x.id}" target="_blank">${x.number}</a></td><td>${x.name}<br><small>${x.address}, ${x.city}<br>${x.phone}</small></td><td>${x.medium} keski + ${x.large} iso</td><td>${eur(x.total)}</td><td>${fmtD(x.pickupDate)} ${x.pickupTime||''}</td><td>${x.status==='peruttu'?'–':fmtD(x.returnDate)}</td><td>${x.payment}</td><td>${x.channel}${x.sellerCode?' / '+x.sellerCode:''}${x.hasPhoto?`<br><a href="/api/admin/photo/${x.id}?pin=${encodeURIComponent(PIN)}" target="_blank"><img src="/api/admin/photo/${x.id}?pin=${encodeURIComponent(PIN)}" style="width:70px;border-radius:6px;margin-top:4px" alt="sopimuskuva"></a>`:''}</td><td><select onchange="st('${x.id}',this.value)">${['vahvistettu','noudettu','pesussa','palautettu','peruttu'].map(v=>`<option ${v===x.status?'selected':''}>${v}</option>`).join('')}</select></td></tr>`).join('')||'<tr><td colspan=9>Ei tilauksia.</td></tr>';
+const f=$('#sf');for(const k of ['maxPickupPerDay','storageCapacity','turnaroundDays','washPerDay','priceMedium','priceLarge','vatPct'])f[k].value=s[k];f.sellerCodes.value=s.sellerCodes.join(', ');
+$('#wd').innerHTML=DN.map((n,i)=>`<label class="chk"><input type="checkbox" value="${i+1}" ${s.workDays.includes(i+1)?'checked':''}> ${n}</label>`).join('');
+$('#wk').textContent='≈ '+(s.washPerDay*s.workDays.length)+' / viikko';}
+async function st(id,v){await api('/api/admin/orders/'+id,{method:'PATCH',body:JSON.stringify({status:v}),...H()});load()}
+function exp(){fetch('/api/admin/export',H()).then(r=>r.blob()).then(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mattorundi.json';a.click()})}
+$('#sf').onsubmit=async e=>{e.preventDefault();const f=e.target;const b={};for(const k of ['maxPickupPerDay','storageCapacity','turnaroundDays','washPerDay','priceMedium','priceLarge','vatPct'])b[k]=+f[k].value;
+b.workDays=[...document.querySelectorAll('#wd input:checked')].map(x=>+x.value);b.sellerCodes=f.sellerCodes.value.split(',');
+try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(b),...H()});$('#smsg').innerHTML='<span class="ok">Tallennettu.</span>';load()}catch(err){$('#smsg').innerHTML='<span class="err">'+err.message+'</span>'}};
+if(PIN)login();</script></body></html>

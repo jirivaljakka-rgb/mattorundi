@@ -1,0 +1,21 @@
+<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Myyjä: kirjaa sopimus – Mattorundi</title><link rel="stylesheet" href="styles.css"></head><body>
+<header class="top"><div class="wrap"><a class="logo" href="/"><b>MATTO</b>RUNDI</a><nav><a href="/paperisopimus" target="_blank">Paperisopimus</a><a href="/admin">Ylläpito</a></nav></div></header>
+<section><div class="wrap"><h2>Myyjä: kirjaa sopimus</h2><p class="lead">Täytä paperisopimus asiakkaan kanssa, anna asiakkaalle oma kappale ja peruutuslomake, ja kirjaa tiedot tähän.</p>
+<form id="f" class="card" style="max-width:820px">
+<label>Myyjäkoodi *</label><input id="sellerCode" required placeholder="esim. ROOPE" style="text-transform:uppercase">
+<div class="row"><div><label>Asiakkaan nimi *</label><input id="name" required></div><div><label>Puhelin *</label><input id="phone" type="tel" required></div></div>
+<label>Sähköposti</label><input id="email" type="email">
+<label>Katuosoite *</label><input id="address" required>
+<div class="row"><div><label>Postinumero</label><input id="postal" inputmode="numeric"></div><div><label>Kaupunki</label><input id="city" value="Tampere"></div></div>
+<div class="row"><div><label>Keskikokoiset (1–2,4 m²) · 39 €</label><div class="qty"><button type="button" data-q="medium" data-s="-1">−</button><input id="medium" type="number" min="0" value="1"><button type="button" data-q="medium" data-s="1">+</button></div></div>
+<div><label>Isot (2,5–3,5 m²) · 49 €</label><div class="qty"><button type="button" data-q="large" data-s="-1">−</button><input id="large" type="number" min="0" value="0"><button type="button" data-q="large" data-s="1">+</button></div></div></div>
+<label>Ehdotettu noutopäivä *</label><div id="cal"></div>
+<label>Noutoaika</label><input id="pickupTime" placeholder="esim. klo 16–18">
+<div class="sum" id="sum"></div>
+<label>Kuva allekirjoitetusta paperisopimuksesta (valinnainen)</label><input id="photo" type="file" accept="image/*" capture="environment"><img id="prev" style="max-width:220px;margin-top:8px;display:none;border-radius:8px">
+<label>Huomiot</label><textarea id="notes" rows="2"></textarea>
+<label class="chk"><input type="checkbox" id="acceptTerms"> Asiakas on allekirjoittanut paperisopimuksen ja saanut oman kappaleen sekä peruutuslomakkeen. *</label>
+<div id="terms" style="display:none"></div><input type="checkbox" id="startEarly" hidden><input type="checkbox" id="marketingConsent" hidden>
+<p id="msg"></p><button class="btn btn-g" id="go">Tallenna sopimus</button></form></div></section>
+<script src="common.js"></script><script src="terms.js"></script><script src="booking.js"></script>
+<script>$('#photo').onchange=async e=>{const f=e.target.files[0];window.PHOTO=f?await readPhoto(f):null;$('#prev').src=window.PHOTO||'';$('#prev').style.display=f?'block':'none'};initBooking('kotimyynti')</script></body></html>

@@ -1,0 +1,19 @@
+<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tilausvahvistus – Mattorundi</title><link rel="stylesheet" href="styles.css"></head><body>
+<header class="top"><div class="wrap"><a class="logo" href="/"><b>MATTO</b>RUNDI</a></div></header>
+<section><div class="wrap"><div class="card" id="c">Ladataan…</div>
+<p class="noprint" style="margin-top:18px"><button class="btn btn-g" onclick="print()">Tulosta / tallenna PDF</button> &nbsp; <button class="btn btn-n" onclick="navigator.clipboard.writeText(location.href);this.textContent='Linkki kopioitu'">Kopioi linkki asiakkaalle</button> &nbsp; <a class="btn btn-n" id="mail">Lähetä sähköpostilla</a></p></div></section>
+<script src="common.js"></script><script src="terms.js"></script><script>
+(async()=>{const id=new URLSearchParams(location.search).get('id');try{const o=await api('/api/orders/'+id);
+const rows=[o.medium?`<tr><td>Keskikokoinen matto (1–2,4 m²)</td><td>${o.medium}</td><td>${eur(o.priceMedium)}</td><td>${eur(o.medium*o.priceMedium)}</td></tr>`:'',o.large?`<tr><td>Iso matto (2,5–3,5 m²)</td><td>${o.large}</td><td>${eur(o.priceLarge)}</td><td>${eur(o.large*o.priceLarge)}</td></tr>`:''].join('');
+$('#c').innerHTML=`<div style="display:flex;justify-content:space-between;flex-wrap:wrap"><div><span class="logo" style="color:var(--navy)"><b>MATTO</b>RUNDI</span><h2>Tilausvahvistus ${o.number}</h2></div><div style="text-align:right;font-size:14px">${COMPANY.name}<br>Y-tunnus: ${COMPANY.ytunnus}<br>${COMPANY.email} · ${COMPANY.phone}</div></div>
+<p class="draft noprint">Pilottiversio – sopimusehdot ovat luonnos, joka tarkistetaan juridisesti.</p>
+<div class="row"><div><h3>Asiakas</h3>${o.name}<br>${o.address}<br>${o.postal||''} ${o.city||''}<br>${o.phone}<br>${o.email||''}</div>
+<div><h3>Tilaus</h3>Sopimuspäivä: ${new Date(o.createdAt).toLocaleString('fi-FI')}<br>Myyntitapa: ${o.channel==='kotimyynti'?'kotimyynti, myyjä '+o.sellerCode:'verkkovaraus'}<br><b>Nouto: ${fmtD(o.pickupDate)} ${o.pickupTime||''}</b><br><b>Arvioitu palautus: ${fmtD(o.returnDate)}</b><br>Maksu: ${o.payment}</div></div>
+<table style="margin-top:16px"><tr><th>Palvelu</th><th>Kpl</th><th>á</th><th>Yhteensä</th></tr>${rows}<tr><td colspan="3"><b>Yhteensä (sis. ALV ${String(o.vatPct).replace('.',',')} %)</b></td><td><b>${eur(o.total)}</b></td></tr><tr><td colspan="3">josta ALV</td><td>${eur(o.vat)}</td></tr></table>
+<p style="font-size:14px">Hinta sisältää noudon, pesun, kuivauksen ja palautuksen.${o.notes?'<br>Lisätiedot: '+o.notes.replace(/</g,'&lt;'):''}</p>
+<p><b>Peruuttamisoikeus:</b> Voit peruuttaa sopimuksen ilmoittamatta syytä 14 päivän kuluessa sopimuspäivästä eli viimeistään ${new Date(new Date(o.createdAt).getTime()+14*864e5).toLocaleDateString('fi-FI')}. Ilmoita sähköpostilla ${COMPANY.email} tai puhelimella ${COMPANY.phone}, tai käytä alla olevaa peruutuslomaketta.
+${o.startEarly?'<br>Asiakas on pyytänyt palvelun aloittamista peruuttamisaikana (ks. ehtojen kohta 7).':''}</p>
+${o.signature?`<p><b>Asiakkaan allekirjoitus:</b><br><img src="${o.signature}" style="max-width:320px;border-bottom:1px solid #333"></p>`:''}
+<div class="pb"><h2>Tilausehdot</h2>${TERMS_HTML}</div><div class="pb" style="border-top:2px dashed #999;margin-top:24px;padding-top:12px">${CANCEL_FORM_HTML(o)}</div>`;
+$('#mail').href=`mailto:${o.email||''}?subject=${encodeURIComponent('Mattorundi tilausvahvistus '+o.number)}&body=${encodeURIComponent('Hei '+o.name+',\n\nkiitos tilauksesta! Tilausvahvistus, ehdot ja peruutuslomake: '+location.href+'\n\nNouto '+fmtD(o.pickupDate)+', arvioitu palautus '+fmtD(o.returnDate)+'.\n\nMattorundi, 040 41 08581')}`;
+}catch(e){$('#c').innerHTML='<span class="err">'+e.message+'</span>'}})()</script></body></html>
