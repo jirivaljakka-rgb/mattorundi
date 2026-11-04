@@ -57,7 +57,9 @@ function simulate(orders, st) {
 // Voiko n mattoa noutaa päivänä date? Palauttaa {ok, reason, returnDate}
 function check(orders, st, date, n, today) {
   if (today && date <= today) return { ok: false, reason: 'menneisyys' };
-  if (!isWork(date, st)) return { ok: false, reason: 'ei työpäivä' };
+  // Jos ylläpito on asettanut kiinteät noutopäivät (esim. hallin vuokrakausi), vain ne ovat varattavissa – myös viikonloppuna.
+  if (isFixedDays(st)) { if (!st.pickupDates.includes(date)) return { ok: false, reason: 'ei noutopäivä' }; }
+  else if (!isWork(date, st)) return { ok: false, reason: 'ei työpäivä' };
   const picked = orders.filter(o => o.status !== 'peruttu' && o.pickupDate === date).reduce((a, o) => a + o.carpetsTotal, 0);
   if (picked + n > st.maxPickupPerDay) return { ok: false, reason: 'noutokiintiö täynnä', picked };
   const test = { id: '__new', pickupDate: date, carpetsTotal: n, createdAt: '9999' };
@@ -70,4 +72,12 @@ function calendar(orders, st, from, count, n, today) {
   const out = []; for (let i = 0; i < count; i++) { const d = addDays(from, i); out.push({ date: d, ...check(orders, st, d, n, today) }); }
   return out;
 }
-module.exports = { simulate, check, calendar, addDays, iso, isWork };
+const isFixedDays = st => Array.isArray(st.pickupDates) && st.pickupDates.length > 0;
+const isPickupDay = (s, st) => isFixedDays(st) ? st.pickupDates.includes(s) : isWork(s, st);
+
+// Myyjän provisio tilauksesta: % kokonaishinnasta + € / matto
+function commission(total, carpets, seller) {
+  if (!seller) return 0;
+  return Math.round((total * (+seller.commissionPct || 0) / 100 + carpets * (+seller.commissionPerCarpet || 0)) * 100) / 100;
+}
+module.exports = { simulate, check, calendar, addDays, iso, isWork, isFixedDays, isPickupDay, commission };

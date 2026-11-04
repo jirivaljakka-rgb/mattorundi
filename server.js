@@ -4,22 +4,37 @@ const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
 const DEFAULTS = { maxPickupPerDay: 24, storageCapacity: 50, turnaroundDays: 3, washPerDay: 6, workDays: [1,2,3,4,5],
-  priceMedium: 39, priceLarge: 49, vatPct: 25.5, sellerCodes: ['ROOPE','AHMED'], bookingHorizonDays: 60 };
-function load() { try { const db = JSON.parse(fs.readFileSync(DATA)); db.settings = { ...DEFAULTS, ...db.settings }; return db; } catch { return { settings: { ...DEFAULTS }, orders: [] }; } }
+  priceMedium: 39, priceLarge: 49, vatPct: 25.5, sellerCodes: ['ROOPE','AHMED'], bookingHorizonDays: 60,
+  // Kiinteät noutopäivät (hallin vuokrakausi marraskuu 2026). Tyhjä lista = normaalit työpäivät.
+  pickupDates: ['2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'] };
+// Myyjät: koodi, nimi, provisio-% ja/tai €/matto. Vanha sellerCodes-lista muunnetaan myyjiksi automaattisesti.
+const cleanSellers = list => { const seen = new Set(); return (Array.isArray(list) ? list : []).map(x => ({
+  code: String(x.code || '').toUpperCase().replace(/[^A-Z0-9ÅÄÖ_-]/g, '').slice(0, 20), name: String(x.name || '').trim().slice(0, 80),
+  commissionPct: Math.max(0, +x.commissionPct || 0), commissionPerCarpet: Math.max(0, +x.commissionPerCarpet || 0), active: x.active !== false
+})).filter(x => x.code && !seen.has(x.code) && seen.add(x.code)); };
+function normalize(s) {
+  if (!Array.isArray(s.sellers)) s.sellers = (s.sellerCodes || []).map(c => ({ code: c, name: c, commissionPct: 0, commissionPerCarpet: 0, active: true }));
+  s.sellers = cleanSellers(s.sellers); s.sellerCodes = s.sellers.filter(x => x.active).map(x => x.code);
+  s.pickupDates = (Array.isArray(s.pickupDates) ? s.pickupDates : []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+  return s;
+}
+function load() { try { const db = JSON.parse(fs.readFileSync(DATA)); db.settings = normalize({ ...DEFAULTS, ...db.settings }); return db; } catch { return { settings: normalize({ ...DEFAULTS }), orders: [] }; } }
+const findSeller = code => db.settings.sellers.find(x => x.active && x.code === String(code || '').trim().toUpperCase());
 function save(db) { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(db, null, 2)); fs.renameSync(DATA + '.tmp', DATA); }
 let db = load();
 const today = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Helsinki' });
 const send = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(obj)); };
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8' };
 const body = req => new Promise(r => { let b = ''; req.on('data', c => { b += c; if (b.length > 15e6) req.destroy(); }); req.on('end', () => { try { r(JSON.parse(b || '{}')); } catch { r({}); } }); });
 const isAdmin = req => req.headers['x-admin-pin'] === ADMIN_PIN;
-function publicOrder(o) { return o; }
+// Asiakkaalle näytettävä tilaus: ei myyjän provisiota eikä sisäisiä tiedostonimiä
+function publicOrder(o) { const { commission, photoFile, ...rest } = o; return rest; }
 function withReturns() { const sim = cap.simulate(db.orders, db.settings); return db.orders.map(o => ({ ...o, returnDate: sim.returns[o.id] || null })); }
 
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x'); const p = u.pathname;
   try {
-    if (p === '/api/public-settings') { const s = db.settings; return send(res, 200, { priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, workDays: s.workDays, turnaroundDays: s.turnaroundDays, bookingHorizonDays: s.bookingHorizonDays }); }
+    if (p === '/api/public-settings') { const s = db.settings; return send(res, 200, { priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, workDays: s.workDays, turnaroundDays: s.turnaroundDays, bookingHorizonDays: s.bookingHorizonDays, pickupDates: s.pickupDates.filter(d => d > today()) }); }
     if (p === '/api/calendar') {
       const n = Math.max(1, parseInt(u.searchParams.get('n')) || 1);
       const from = u.searchParams.get('from') || today();
@@ -34,7 +49,7 @@ http.createServer(async (req, res) => {
       if (!b.name || !b.phone || !b.address || !b.pickupDate) return send(res, 400, { error: 'Nimi, puhelin, osoite ja noutopäivä vaaditaan.' });
       if (!b.acceptTerms) return send(res, 400, { error: 'Ehtojen hyväksyntä puuttuu.' });
       if (b.channel === 'kotimyynti') {
-        if (!s.sellerCodes.map(x => x.toUpperCase()).includes(String(b.sellerCode || '').toUpperCase())) return send(res, 400, { error: 'Tuntematon myyjäkoodi.' });
+        if (!findSeller(b.sellerCode)) return send(res, 400, { error: 'Tuntematon myyjäkoodi.' });
         if (b.photo && !/^data:image\/(jpeg|png|webp);base64,/.test(String(b.photo))) return send(res, 400, { error: 'Kuva ei kelpaa.' });
       }
       const c = cap.check(db.orders, s, b.pickupDate, n, today());
@@ -47,7 +62,9 @@ http.createServer(async (req, res) => {
         medium: med, large: lg, carpetsTotal: n, priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, total,
         vat: Math.round(total - total / (1 + s.vatPct / 100)) === 0 ? 0 : +(total - total / (1 + s.vatPct / 100)).toFixed(2),
         payment: b.payment === 'heti' ? 'maksettu heti' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
-        startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? String(b.sellerCode).toUpperCase() : null,
+        startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
+        sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
+        commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode)) : 0,
         signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: 'LUONNOS-2026-11', estReturnAtBooking: c.returnDate };
       if (o.hasPhoto) { const mm = String(b.photo).match(/^data:image\/(\w+);base64,(.*)$/); const dir = path.join(path.dirname(DATA), 'photos'); fs.mkdirSync(dir, { recursive: true }); o.photoFile = o.id + '.' + (mm[1] === 'jpeg' ? 'jpg' : mm[1]); fs.writeFileSync(path.join(dir, o.photoFile), Buffer.from(mm[2], 'base64')); }
       db.orders.push(o); save(db);
@@ -55,7 +72,7 @@ http.createServer(async (req, res) => {
     }
     let m;
     if ((m = p.match(/^\/api\/orders\/([\w-]{36})$/)) && req.method === 'GET') {
-      const o = withReturns().find(x => x.id === m[1]); return o ? send(res, 200, o) : send(res, 404, { error: 'Ei löydy' });
+      const o = withReturns().find(x => x.id === m[1]); return o ? send(res, 200, publicOrder(o)) : send(res, 404, { error: 'Ei löydy' });
     }
     if ((m = p.match(/^\/api\/admin\/photo\/([\w-]{36})$/))) {
       if (u.searchParams.get('pin') !== ADMIN_PIN && !isAdmin(req)) return send(res, 401, { error: 'Väärä PIN' });
@@ -64,20 +81,43 @@ http.createServer(async (req, res) => {
     }
     if (p.startsWith('/api/admin/')) {
       if (!isAdmin(req)) return send(res, 401, { error: 'Väärä PIN' });
-      if (p === '/api/admin/orders') return send(res, 200, withReturns().map(o => ({ ...o, signature: o.signature ? '(tallennettu)' : null })));
+      if (p === '/api/admin/orders') return send(res, 200, withReturns().map(o => {
+        // vanhoille tilauksille (ennen provisio-ominaisuutta) provisio ja nimi lasketaan myyjärekisteristä, kuten raportissa
+        const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === o.sellerCode) : null;
+        return { ...o, signature: o.signature ? '(tallennettu)' : null, sellerName: o.sellerName || (sl && sl.name) || o.sellerCode,
+          commission: o.commission !== undefined ? o.commission : (o.channel === 'kotimyynti' ? cap.commission(o.total, o.carpetsTotal, sl) : 0) };
+      }));
       if (p === '/api/admin/settings' && req.method === 'GET') return send(res, 200, db.settings);
       if (p === '/api/admin/settings' && req.method === 'PUT') {
         const b = await body(req); const s = db.settings;
         for (const k of ['maxPickupPerDay','storageCapacity','turnaroundDays','washPerDay','priceMedium','priceLarge','vatPct','bookingHorizonDays']) if (b[k] !== undefined && !isNaN(+b[k]) && +b[k] >= 0) s[k] = +b[k];
         if (Array.isArray(b.workDays)) s.workDays = b.workDays.map(Number).filter(x => x >= 1 && x <= 7);
-        if (Array.isArray(b.sellerCodes)) s.sellerCodes = b.sellerCodes.map(x => String(x).trim().toUpperCase()).filter(Boolean);
-        save(db); return send(res, 200, s);
+        if (Array.isArray(b.sellers)) s.sellers = cleanSellers(b.sellers);
+        else if (Array.isArray(b.sellerCodes)) s.sellers = cleanSellers(b.sellerCodes.map(c => s.sellers.find(x => x.code === String(c).trim().toUpperCase()) || { code: c, name: c }));
+        if (Array.isArray(b.pickupDates)) s.pickupDates = b.pickupDates;
+        normalize(s); save(db); return send(res, 200, s);
+      }
+      // Provisioraportti: myynnit ja provisiot myyjittäin aikaväliltä (sopimuspäivän mukaan), perutut eivät mukana
+      if (p === '/api/admin/commissions') {
+        const from = u.searchParams.get('from') || '0000-01-01', to = u.searchParams.get('to') || '9999-12-31';
+        const rows = {};
+        for (const o of db.orders) {
+          if (o.channel !== 'kotimyynti' || !o.sellerCode || o.status === 'peruttu') continue;
+          const day = new Date(o.createdAt).toLocaleDateString('sv-SE', { timeZone: 'Europe/Helsinki' });
+          if (day < from || day > to) continue;
+          const sl = db.settings.sellers.find(x => x.code === o.sellerCode);
+          const r = rows[o.sellerCode] = rows[o.sellerCode] || { code: o.sellerCode, name: (sl && sl.name) || o.sellerName || o.sellerCode, orders: 0, carpets: 0, sales: 0, commission: 0 };
+          r.orders++; r.carpets += o.carpetsTotal; r.sales += o.total;
+          r.commission += o.commission !== undefined ? o.commission : cap.commission(o.total, o.carpetsTotal, sl);
+        }
+        const list = Object.values(rows).map(r => ({ ...r, sales: +r.sales.toFixed(2), commission: +r.commission.toFixed(2) })).sort((a, b) => b.sales - a.sales);
+        return send(res, 200, { from, to, sellers: list });
       }
       if (p === '/api/admin/capacity') {
         const sim = cap.simulate(db.orders, db.settings); const from = u.searchParams.get('from') || today(); const out = [];
         for (let i = 0; i < 28; i++) { const d = cap.addDays(from, i); const v = sim.days[d] || { pickups: 0, storage: 0 };
           const returns = withReturns().filter(o => o.status !== 'peruttu' && o.returnDate === d).reduce((a, o) => a + o.carpetsTotal, 0);
-          out.push({ date: d, work: cap.isWork(d, db.settings), pickups: v.pickups, storage: v.storage, returns }); }
+          out.push({ date: d, work: cap.isPickupDay(d, db.settings), pickups: v.pickups, storage: v.storage, returns }); }
         return send(res, 200, { days: out, settings: db.settings });
       }
       if ((m = p.match(/^\/api\/admin\/orders\/([\w-]{36})$/)) && req.method === 'PATCH') {
