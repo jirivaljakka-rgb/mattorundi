@@ -4,7 +4,7 @@ const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
 const DEFAULTS = { maxPickupPerDay: 24, storageCapacity: 50, turnaroundDays: 3, washPerDay: 6, workDays: [1,2,3,4,5],
-  priceMedium: 39, priceLarge: 49, vatPct: 25.5, bookingHorizonDays: 60,
+  priceMedium: 44, priceLarge: 54, vatPct: 25.5, bookingHorizonDays: 60,
   // Kiinteät noutopäivät (hallin vuokrakausi marraskuu 2026). Tyhjä lista = normaalit työpäivät.
   pickupDates: ['2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'] };
 // Oletusmyyjät: koodi = nimi isoin kirjaimin + 669. Perustajilla ei provisiota, muilla 20 € / iso ja 16 € / keski-/pieni matto.
@@ -41,7 +41,7 @@ function toSheets(o) {
   const order = { number: o.number, createdAt: o.createdAt, channel: o.channel, sellerCode: o.sellerCode || '', sellerName: o.sellerName || (sl && sl.name) || '',
     name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city, pickupDate: o.pickupDate, pickupTime: o.pickupTime,
     large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: ret || o.estReturnAtBooking || '', notes: o.notes, status: o.status, payment: o.payment };
-  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: process.env.SHEETS_SECRET || '', order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
+  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
     .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
     .catch(e => console.error('Sheets-virhe', o.number, e.message));
 }
