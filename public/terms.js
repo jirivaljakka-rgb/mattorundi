@@ -7,7 +7,7 @@ const TERMS_HTML = `
 <h3>2. Palvelun sisältö</h3>
 <p>Mattorundi noutaa asiakkaan matot sovittuna noutopäivänä asiakkaan osoitteesta Tampereella, pesee ja kuivaa ne sekä palauttaa ne asiakkaalle. Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Pesumenetelmä valitaan maton materiaalin mukaan (kone- tai käsinpesu). Ennen pesua tehdään tarvittaessa värinpitävyystesti. Jos matto ei sovellu pestäväksi turvallisesti, siitä ilmoitetaan asiakkaalle ennen pesua eikä siitä veloiteta.</p>
 <h3>3. Hinnat</h3>
-<p>Keskikokoinen matto (1–2,4 m²) 39 €, iso matto (2,5–3,5 m²) 49 €. Hinnat sisältävät arvonlisäveron 25,5 %. Yli 3,5 m² ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen ennen tilausta. Muita kuluja ei peritä.</p>
+<p>Keskikokoinen matto (1–2,4 m²) 44 €, iso matto (2,5–3,5 m²) 54 €. Hinnat sisältävät arvonlisäveron 25,5 %. Yli 3,5 m² ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen ennen tilausta. Muita kuluja ei peritä.</p>
 <h3>4. Aikataulu</h3>
 <p>Nouto tapahtuu sopimuksessa merkittynä päivänä. Arvioitu palautuspäivä ilmoitetaan tilausvahvistuksessa; normaali käsittelyaika on noin 3 päivää, ruuhka-aikana pidempi. Palautusajasta sovitaan asiakkaan kanssa puhelimitse tai viestillä.</p>
 <h3>5. Maksaminen</h3>

@@ -1,5 +1,5 @@
 // Jaettu tilauslomakelogiikka (verkkovaraus ja myyjän sopimus)
-let PICK = null, RET = null, S = { priceMedium: 39, priceLarge: 49, vatPct: 25.5 }, sigPad = null;
+let PICK = null, RET = null, S = { priceMedium: 44, priceLarge: 54, vatPct: 25.5 }, sigPad = null;
 function counts() { return { medium: Math.max(0, +$('#medium').value || 0), large: Math.max(0, +$('#large').value || 0) }; }
 function updateSum() { const c = counts(), n = c.medium + c.large, t = c.medium * S.priceMedium + c.large * S.priceLarge, vat = t - t / (1 + S.vatPct / 100);
   $('#sum').innerHTML = `${c.medium} × ${S.priceMedium} € + ${c.large} × ${S.priceLarge} € = <b>${eur(t)}</b> <small>(sis. ALV ${String(S.vatPct).replace('.', ',')} %: ${eur(vat)})</small><br>` +
