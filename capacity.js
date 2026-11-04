@@ -75,9 +75,12 @@ function calendar(orders, st, from, count, n, today) {
 const isFixedDays = st => Array.isArray(st.pickupDates) && st.pickupDates.length > 0;
 const isPickupDay = (s, st) => isFixedDays(st) ? st.pickupDates.includes(s) : isWork(s, st);
 
-// Myyjän provisio tilauksesta: % kokonaishinnasta + € / matto
-function commission(total, carpets, seller) {
+// Myyjän provisio tilauksesta: % kokonaishinnasta + € / matto + € / iso matto + € / keski- tai pieni matto
+// counts = { large, medium } (valinnainen; ilman sitä vain % ja €/matto lasketaan – taaksepäin yhteensopiva)
+function commission(total, carpets, seller, counts) {
   if (!seller) return 0;
-  return Math.round((total * (+seller.commissionPct || 0) / 100 + carpets * (+seller.commissionPerCarpet || 0)) * 100) / 100;
+  const c = counts || {};
+  return Math.round((total * (+seller.commissionPct || 0) / 100 + carpets * (+seller.commissionPerCarpet || 0)
+    + (+c.large || 0) * (+seller.commissionPerLarge || 0) + (+c.medium || 0) * (+seller.commissionPerMedium || 0)) * 100) / 100;
 }
 module.exports = { simulate, check, calendar, addDays, iso, isWork, isFixedDays, isPickupDay, commission };

@@ -4,21 +4,34 @@ const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
 const DEFAULTS = { maxPickupPerDay: 24, storageCapacity: 50, turnaroundDays: 3, washPerDay: 6, workDays: [1,2,3,4,5],
-  priceMedium: 39, priceLarge: 49, vatPct: 25.5, sellerCodes: ['ROOPE','AHMED'], bookingHorizonDays: 60,
+  priceMedium: 39, priceLarge: 49, vatPct: 25.5, bookingHorizonDays: 60,
   // Kiinteät noutopäivät (hallin vuokrakausi marraskuu 2026). Tyhjä lista = normaalit työpäivät.
   pickupDates: ['2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'] };
-// Myyjät: koodi, nimi, provisio-% ja/tai €/matto. Vanha sellerCodes-lista muunnetaan myyjiksi automaattisesti.
+// Oletusmyyjät: koodi = nimi isoin kirjaimin + 669. Perustajilla ei provisiota, muilla 20 € / iso ja 16 € / keski-/pieni matto.
+const DEFAULT_SELLERS = [
+  { code: 'ROOPE669', name: 'Roope Liimatainen', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 0, commissionPerMedium: 0, active: true },
+  { code: 'AHMED669', name: 'Ahmed Alguvercin', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 0, commissionPerMedium: 0, active: true },
+  ...[1, 2, 3, 4].map(i => ({ code: 'MYYJA' + i + '669', name: 'Myyjä ' + i, commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 20, commissionPerMedium: 16, active: true }))
+];
+DEFAULTS.sellers = DEFAULT_SELLERS;
+const OLD_CODES = ['ROOPE', 'AHMED']; // korvattu ROOPE669 / AHMED669
+// Myyjät: koodi, nimi, provisio-%, €/matto sekä €/iso matto ja €/keski- tai pieni matto. Vanha sellerCodes-lista muunnetaan myyjiksi automaattisesti.
 const cleanSellers = list => { const seen = new Set(); return (Array.isArray(list) ? list : []).map(x => ({
   code: String(x.code || '').toUpperCase().replace(/[^A-Z0-9ÅÄÖ_-]/g, '').slice(0, 20), name: String(x.name || '').trim().slice(0, 80),
-  commissionPct: Math.max(0, +x.commissionPct || 0), commissionPerCarpet: Math.max(0, +x.commissionPerCarpet || 0), active: x.active !== false
+  commissionPct: Math.max(0, +x.commissionPct || 0), commissionPerCarpet: Math.max(0, +x.commissionPerCarpet || 0),
+  commissionPerLarge: Math.max(0, +x.commissionPerLarge || 0), commissionPerMedium: Math.max(0, +x.commissionPerMedium || 0), active: x.active !== false
 })).filter(x => x.code && !seen.has(x.code) && seen.add(x.code)); };
 function normalize(s) {
   if (!Array.isArray(s.sellers)) s.sellers = (s.sellerCodes || []).map(c => ({ code: c, name: c, commissionPct: 0, commissionPerCarpet: 0, active: true }));
-  s.sellers = cleanSellers(s.sellers); s.sellerCodes = s.sellers.filter(x => x.active).map(x => x.code);
+  s.sellers = cleanSellers(s.sellers).filter(x => !OLD_CODES.includes(x.code));
+  s.sellerCodes = s.sellers.filter(x => x.active).map(x => x.code);
   s.pickupDates = (Array.isArray(s.pickupDates) ? s.pickupDates : []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
   return s;
 }
-function load() { try { const db = JSON.parse(fs.readFileSync(DATA)); db.settings = normalize({ ...DEFAULTS, ...db.settings }); return db; } catch { return { settings: normalize({ ...DEFAULTS }), orders: [] }; } }
+function load() { try { const db = JSON.parse(fs.readFileSync(DATA)); db.settings = normalize({ ...DEFAULTS, ...db.settings });
+  // uudet oletusmyyjät lisätään olemassa olevaan tietokantaan, jos niitä ei vielä ole (ladattaessa)
+  for (const d of DEFAULT_SELLERS) if (!db.settings.sellers.some(x => x.code === d.code)) db.settings.sellers.push({ ...d });
+  db.settings.sellerCodes = db.settings.sellers.filter(x => x.active).map(x => x.code); return db; } catch { return { settings: normalize({ ...DEFAULTS, sellers: DEFAULT_SELLERS.map(x => ({ ...x })) }), orders: [] }; } }
 const findSeller = code => db.settings.sellers.find(x => x.active && x.code === String(code || '').trim().toUpperCase());
 function save(db) { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(db, null, 2)); fs.renameSync(DATA + '.tmp', DATA); }
 let db = load();
@@ -64,7 +77,7 @@ http.createServer(async (req, res) => {
         payment: b.payment === 'heti' ? 'maksettu heti' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
         startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
         sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
-        commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode)) : 0,
+        commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) : 0,
         signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: 'LUONNOS-2026-11', estReturnAtBooking: c.returnDate };
       if (o.hasPhoto) { const mm = String(b.photo).match(/^data:image\/(\w+);base64,(.*)$/); const dir = path.join(path.dirname(DATA), 'photos'); fs.mkdirSync(dir, { recursive: true }); o.photoFile = o.id + '.' + (mm[1] === 'jpeg' ? 'jpg' : mm[1]); fs.writeFileSync(path.join(dir, o.photoFile), Buffer.from(mm[2], 'base64')); }
       db.orders.push(o); save(db);
@@ -83,9 +96,9 @@ http.createServer(async (req, res) => {
       if (!isAdmin(req)) return send(res, 401, { error: 'Väärä PIN' });
       if (p === '/api/admin/orders') return send(res, 200, withReturns().map(o => {
         // vanhoille tilauksille (ennen provisio-ominaisuutta) provisio ja nimi lasketaan myyjärekisteristä, kuten raportissa
-        const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === o.sellerCode) : null;
+        const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === String(o.sellerCode).toUpperCase()) : null;
         return { ...o, signature: o.signature ? '(tallennettu)' : null, sellerName: o.sellerName || (sl && sl.name) || o.sellerCode,
-          commission: o.commission !== undefined ? o.commission : (o.channel === 'kotimyynti' ? cap.commission(o.total, o.carpetsTotal, sl) : 0) };
+          commission: o.commission !== undefined ? o.commission : (o.channel === 'kotimyynti' ? cap.commission(o.total, o.carpetsTotal, sl, { large: o.large || 0, medium: o.medium || 0 }) : 0) };
       }));
       if (p === '/api/admin/settings' && req.method === 'GET') return send(res, 200, db.settings);
       if (p === '/api/admin/settings' && req.method === 'PUT') {
@@ -105,10 +118,10 @@ http.createServer(async (req, res) => {
           if (o.channel !== 'kotimyynti' || !o.sellerCode || o.status === 'peruttu') continue;
           const day = new Date(o.createdAt).toLocaleDateString('sv-SE', { timeZone: 'Europe/Helsinki' });
           if (day < from || day > to) continue;
-          const sl = db.settings.sellers.find(x => x.code === o.sellerCode);
-          const r = rows[o.sellerCode] = rows[o.sellerCode] || { code: o.sellerCode, name: (sl && sl.name) || o.sellerName || o.sellerCode, orders: 0, carpets: 0, sales: 0, commission: 0 };
-          r.orders++; r.carpets += o.carpetsTotal; r.sales += o.total;
-          r.commission += o.commission !== undefined ? o.commission : cap.commission(o.total, o.carpetsTotal, sl);
+          const sl = db.settings.sellers.find(x => x.code === String(o.sellerCode).toUpperCase());
+          const r = rows[o.sellerCode] = rows[o.sellerCode] || { code: o.sellerCode, name: (sl && sl.name) || o.sellerName || o.sellerCode, orders: 0, carpets: 0, large: 0, medium: 0, sales: 0, commission: 0 };
+          r.orders++; r.carpets += o.carpetsTotal; r.large += o.large || 0; r.medium += o.medium || 0; r.sales += o.total;
+          r.commission += o.commission !== undefined ? o.commission : cap.commission(o.total, o.carpetsTotal, sl, { large: o.large || 0, medium: o.medium || 0 });
         }
         const list = Object.values(rows).map(r => ({ ...r, sales: +r.sales.toFixed(2), commission: +r.commission.toFixed(2) })).sort((a, b) => b.sales - a.sales);
         return send(res, 200, { from, to, sellers: list });

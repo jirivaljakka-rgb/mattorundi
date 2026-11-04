@@ -16,4 +16,9 @@ if (fx.join() !== '2026-11-13,2026-11-14,2026-11-16') { console.error('VIRHE: ki
 const pr = cap.commission(88, 2, { commissionPct: 10, commissionPerCarpet: 2 });
 console.log('Provisio 88 € / 2 mattoa (10 % + 2 €/matto):', pr);
 if (pr !== 12.8) { console.error('VIRHE: provisiolaskenta'); process.exit(1); }
+// Provisio iso/keski: MYYJA1669 (20 €/iso, 16 €/keski) myy 2 isoa + 1 keski -> 56 €
+const m1 = { code: 'MYYJA1669', commissionPerLarge: 20, commissionPerMedium: 16 };
+const pr2 = cap.commission(2 * 49 + 39, 3, m1, { large: 2, medium: 1 });
+console.log('Provisio MYYJA1669 2 isoa + 1 keski:', pr2);
+if (pr2 !== 56) { console.error('VIRHE: iso/keski-provisio'); process.exit(1); }
 console.log('Kaikki testit OK');
