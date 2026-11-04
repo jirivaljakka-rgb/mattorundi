@@ -1,39 +1,469 @@
-:root{--navy:#0D1B2A;--navy2:#1B2F45;--green:#57C41A;--green2:#3f9a0f;--cream:#F4F7F2;--ink:#1a2430;--muted:#5d6b78;--r:14px}
-*{box-sizing:border-box}body{margin:0;font-family:Calibri,"Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--cream);line-height:1.55}
-a{color:var(--green2)}.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
-header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10}
-header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}
-.logo{font-style:italic;font-weight:800;font-size:26px;letter-spacing:.5px;text-decoration:none;color:#fff}.logo b{color:var(--green)}
-nav a{color:#dfe7ee;text-decoration:none;margin-left:18px;font-size:15px}nav a:hover{color:#fff}
-.btn{display:inline-block;border:0;border-radius:999px;padding:13px 24px;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none;font-family:inherit}
-.btn-g{background:var(--green);color:var(--navy)}.btn-g:hover{background:#6ad629}.btn-o{background:transparent;color:#fff;border:2px solid #fff}
-.btn-n{background:var(--navy);color:#fff}.btn-s{padding:7px 14px;font-size:14px}
-.hero{position:relative;color:#fff;min-height:560px;display:flex;align-items:center;background:var(--navy) url(img/hero.jpg) center/cover}
-.hero:before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(13,27,42,.93) 0%,rgba(13,27,42,.75) 45%,rgba(13,27,42,.1) 100%)}
-.hero .wrap{position:relative}.hero h1{font-size:clamp(34px,5.4vw,62px);line-height:1.05;margin:0 0 18px;max-width:640px}
-.hero h1 span{color:var(--green);display:block}.hero p{font-size:20px;max-width:520px;color:#dbe4ec}
-.pill{display:inline-block;background:rgba(87,196,26,.18);color:var(--green);border:1px solid var(--green);padding:4px 12px;border-radius:999px;font-size:14px;margin-bottom:16px}
-section{padding:72px 0}h2{font-size:36px;margin:0 0 8px;color:var(--navy)}.lead{color:var(--muted);font-size:18px;margin:0 0 36px}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.card{background:#fff;border-radius:var(--r);padding:26px;box-shadow:0 6px 24px rgba(13,27,42,.07)}
-.num{width:44px;height:44px;border-radius:50%;background:var(--green);color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:20px;margin-bottom:12px}
-.prices{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:760px}.price{font-size:52px;font-weight:800;color:var(--navy)}.price small{font-size:18px;color:var(--muted);font-weight:400}
-.dark{background:var(--navy);color:#fff}.dark h2{color:#fff}.dark .lead{color:#b8c6d3}
-.split{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}.split img{width:100%;border-radius:var(--r)}
-ul.check{list-style:none;padding:0}ul.check li{padding-left:30px;position:relative;margin:10px 0}ul.check li:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
-label{display:block;font-weight:600;margin:12px 0 4px;font-size:15px}input,select,textarea{width:100%;padding:11px 12px;border:1.5px solid #cfd8df;border-radius:10px;font-size:16px;font-family:inherit;background:#fff}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.chk{display:flex;gap:10px;align-items:flex-start;font-weight:400;margin:10px 0}.chk input{width:22px;height:22px;flex:none;margin-top:2px}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}.cal .h{font-size:12px;text-align:center;color:var(--muted);font-weight:700}
-.cal button{border:1.5px solid #cfd8df;background:#fff;border-radius:10px;padding:8px 2px;font-family:inherit;font-size:15px;cursor:pointer;min-height:54px}
-.cal button small{display:block;font-size:10.5px;color:var(--muted)}.cal button.free{border-color:#a9dd8b}.cal button.free:hover{background:#eefbe6}
-.cal button.closed{background:#eceff1;color:#9aa5ae;cursor:not-allowed;text-decoration:line-through}.cal button.sel{background:var(--green);border-color:var(--green2);color:var(--navy);font-weight:800}
-.cal button.sel small{color:var(--navy)}.legend{font-size:13px;color:var(--muted);margin-top:8px}.sum{background:var(--cream);border-radius:12px;padding:14px 18px;margin:14px 0;font-size:16px}
-.sum b{font-size:22px;color:var(--navy)}.err{color:#b3261e;font-weight:700}.ok{color:var(--green2);font-weight:700}.qty{display:flex;align-items:center;gap:8px}.qty button{width:44px;height:44px;border-radius:10px;border:1.5px solid #cfd8df;background:#fff;font-size:22px;cursor:pointer}.qty input{width:70px;text-align:center}
-footer{background:var(--navy);color:#b8c6d3;padding:36px 0;font-size:14px}footer b{color:#fff}
-table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}th,td{padding:8px 10px;border-bottom:1px solid #e3e8ec;text-align:left;vertical-align:top}th{background:var(--navy);color:#fff}
-.draft{background:#fff4d6;border:2px dashed #d39b00;padding:10px 14px;border-radius:10px;font-weight:700;color:#7a5a00}
-.terms{font-size:14px;max-height:340px;overflow:auto;background:#fff;border:1px solid #cfd8df;border-radius:10px;padding:14px}
-canvas.sig{width:100%;height:200px;border:2px dashed #8aa0b3;border-radius:12px;background:#fff;touch-action:none}
-.bar{height:10px;background:#e3e8ec;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--green)}.bar i.hot{background:#e0702a}
-@media(max-width:800px){.steps,.prices,.split,.row,.row3{grid-template-columns:1fr}nav a.hide{display:none}.hero{min-height:480px}}
-@media print{header.top,.noprint,footer{display:none!important}body{background:#fff}.card{box-shadow:none;padding:0}section{padding:0}.pb{page-break-before:always}}
+/* =====================================================================
+   Mattorundi – design system (2026-11)
+   Kolme kerrosta (ui-ux-pro-max / design-system):
+     1. Primitiivit   – raakavärit ja fontit, ei käytetä suoraan komponenteissa
+     2. Semanttiset   – tarkoitus (--color-primary, --color-bg …), teemat vaihtavat vain tätä kerrosta
+     3. Komponentit   – painike, kortti, kalenteri … viittaavat semanttisiin
+   Teemat: metsa (oletus), petrooli, savi  →  <html data-theme="…">
+   JS:n käyttämät luokat (.cal .free .closed .sel .sum .err .ok .bar .hot …) säilytetty.
+   ===================================================================== */
+
+/* ---------- 1. PRIMITIIVIT ---------- */
+:root{
+  --forest-950:#0A2A1F;--forest-900:#0F3B2C;--forest-800:#174A38;--forest-700:#22604A;--forest-200:#C5D9CB;--forest-100:#E3EDE6;
+  --cream-50:#FBF8F1;--cream-100:#F4EEE2;--cream-200:#EAE1CE;--cream-300:#D8CCB4;
+  --lime-500:#B5CD34;--lime-400:#CADF55;--lime-100:#F0F5D0;
+  --petrol-900:#163A33;--petrol-800:#1F4E45;--petrol-700:#2C6A5E;--petrol-100:#E3EEEA;
+  --clay-700:#933F1A;--clay-600:#B04E24;--clay-300:#EDB08F;
+  --bark-950:#2C1810;--bark-900:#3D2318;--bark-800:#58331F;--bark-100:#F1E4D6;
+  --saffron-400:#E8B04A;--saffron-100:#FAEDCF;
+  --ink-900:#17231D;--ink-600:#55615A;--ink-400:#7D857F;
+  --white:#FFFFFF;--red-700:#A3261B;--amber-700:#6A4A00;--amber-100:#FFF4DB;
+  --font-grotesk:"Bricolage Grotesque","Manrope","Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --font-sans:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:72px;
+  --radius-s:12px;--radius-m:18px;--radius-l:28px;--radius-pill:999px;
+  --ease-out:cubic-bezier(.22,.61,.36,1);
+}
+
+/* ---------- 2. SEMANTTISET (oletusteema: Metsä & lime) ---------- */
+:root,[data-theme="metsa"]{
+  --color-bg:var(--cream-50);
+  --color-surface:var(--white);
+  --color-surface-2:var(--cream-100);
+  --color-border:var(--cream-200);
+  --color-border-strong:var(--cream-300);
+  --color-text:var(--ink-900);
+  --color-text-muted:var(--ink-600);
+  --color-primary:var(--forest-900);
+  --color-primary-hover:var(--forest-950);
+  --color-primary-2:var(--forest-700);
+  --color-on-primary:var(--white);
+  --color-cta:var(--forest-900);
+  --color-cta-hover:var(--forest-950);
+  --color-on-cta:var(--white);
+  --color-cta-shadow:rgba(15,59,44,.45);
+  --color-accent:var(--lime-500);         /* koriste: reittiviiva, numerot, korostukset */
+  --color-accent-soft:var(--lime-100);
+  --color-on-accent:var(--forest-950);
+  --color-eyebrow:var(--forest-700);
+  --color-display-alt:var(--forest-700);
+  --color-dark-bg:var(--forest-900);
+  --color-dark-bg-2:var(--forest-950);
+  --color-on-dark:var(--cream-100);
+  --color-on-dark-muted:#BCCFC3;
+  --color-dark-accent:var(--lime-400);
+  --color-success-bg:var(--forest-100);
+  --color-success-border:var(--forest-200);
+  --color-focus:var(--forest-700);
+  --color-focus-on-dark:var(--lime-400);
+  --color-danger:var(--red-700);
+  --font-head:var(--font-grotesk);
+  --font-body:var(--font-sans);
+  --head-weight:800;
+  --head-tracking:-.035em;
+  --display-alt-style:normal;
+}
+/* Vaihtoehto B: Petrooli & terrakotta (edellinen versio) */
+[data-theme="petrooli"]{
+  --color-bg:#FAF7F2;--color-surface-2:#F2EBDF;--color-border:#DCD2C3;--color-border-strong:#CFC5B5;
+  --color-text:#1E2B26;--color-text-muted:#58635E;
+  --color-primary:var(--petrol-800);--color-primary-hover:var(--petrol-900);--color-primary-2:var(--petrol-700);
+  --color-cta:var(--clay-600);--color-cta-hover:var(--clay-700);--color-cta-shadow:rgba(176,78,36,.55);
+  --color-accent:var(--clay-600);--color-accent-soft:#F6E2D6;--color-on-accent:var(--white);
+  --color-eyebrow:var(--clay-600);--color-display-alt:var(--clay-600);
+  --color-dark-bg:var(--petrol-800);--color-dark-bg-2:var(--petrol-900);--color-on-dark:#F4EEE4;--color-on-dark-muted:#C9D6CF;--color-dark-accent:var(--clay-300);
+  --color-success-bg:var(--petrol-100);--color-success-border:#9FC4B8;--color-focus:var(--clay-600);--color-focus-on-dark:#F3C9A8;
+  --font-head:var(--font-serif);--head-weight:500;--head-tracking:-.02em;--display-alt-style:italic;
+}
+/* Vaihtoehto C: Savi & sahrami */
+[data-theme="savi"]{
+  --color-bg:#FAF5EC;--color-surface-2:#F3E9D8;--color-border:#E6D7BF;--color-border-strong:#D3C0A2;
+  --color-text:#2A1B14;--color-text-muted:#6A564B;
+  --color-primary:var(--bark-800);--color-primary-hover:var(--bark-900);--color-primary-2:#7A4A30;
+  --color-cta:var(--bark-900);--color-cta-hover:var(--bark-950);--color-cta-shadow:rgba(61,35,24,.45);
+  --color-accent:var(--saffron-400);--color-accent-soft:var(--saffron-100);--color-on-accent:var(--bark-950);
+  --color-eyebrow:#8A4B22;--color-display-alt:#8A4B22;
+  --color-dark-bg:var(--bark-900);--color-dark-bg-2:var(--bark-950);--color-on-dark:#F6EBDD;--color-on-dark-muted:#D8C3AE;--color-dark-accent:var(--saffron-400);
+  --color-success-bg:#EEF0DA;--color-success-border:#C9CC98;--color-focus:#8A4B22;--color-focus-on-dark:var(--saffron-400);
+  --font-head:var(--font-serif);--head-weight:500;--head-tracking:-.02em;--display-alt-style:italic;
+}
+
+/* ---------- 3. KOMPONENTTITOKENIT ---------- */
+:root{
+  --btn-primary-bg:var(--color-cta);--btn-primary-bg-hover:var(--color-cta-hover);--btn-primary-fg:var(--color-on-cta);
+  --btn-secondary-fg:var(--color-primary);--btn-secondary-border:var(--color-primary);
+  --card-bg:var(--color-surface);--card-border:var(--color-border);--card-radius:var(--radius-m);
+  --card-shadow:0 1px 2px rgba(23,35,29,.04),0 10px 30px -12px rgba(23,35,29,.14);
+  --card-shadow-hover:0 2px 4px rgba(23,35,29,.04),0 28px 60px -24px rgba(23,35,29,.30);
+  --input-bg:var(--color-surface);--input-border:var(--color-border-strong);--input-radius:var(--radius-s);
+  --cal-bg:var(--color-surface-2);--cal-free-bg:var(--color-success-bg);--cal-free-border:var(--color-success-border);
+  --cal-free-fg:var(--color-primary);--cal-sel-bg:var(--color-primary);--cal-sel-fg:var(--color-on-primary);
+  --badge-bg:var(--color-accent);--badge-fg:var(--color-on-accent);
+  --route-color:var(--color-accent);--route-base:var(--color-border);
+  --sum-bg:var(--color-primary);--sum-fg:var(--color-on-dark);
+  --header-h:72px;
+}
+
+/* =====================================================================
+   PERUSTA
+   ===================================================================== */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--header-h) + 12px)}
+@media (prefers-reduced-motion:no-preference){html:not(.lenis){scroll-behavior:smooth}}
+body{margin:0;font-family:var(--font-body);font-size:17px;color:var(--color-text);background-color:var(--color-bg);line-height:1.6;transition:background-color .4s var(--ease-out)}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--color-primary-2);text-underline-offset:3px}
+a:hover{color:var(--color-primary)}
+:focus-visible{outline:3px solid var(--color-focus);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--color-primary);color:var(--color-on-primary);padding:10px 16px;border-radius:10px;text-decoration:none}
+.skip:focus{top:12px;color:var(--color-on-primary)}
+
+/* typografia */
+h1,h2,h3{font-family:var(--font-head);font-weight:var(--head-weight);letter-spacing:var(--head-tracking);color:var(--color-primary)}
+h2{font-size:clamp(32px,4.2vw,52px);line-height:1.04;margin:0 0 14px}
+h3{font-size:22px;line-height:1.2;margin:0 0 8px;letter-spacing:-.015em}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--color-eyebrow);margin:0 0 14px}
+.eyebrow:before{content:"";width:26px;height:3px;border-radius:3px;background:var(--color-accent)}
+.lead{color:var(--color-text-muted);font-size:19px;line-height:1.6;margin:0 0 40px;max-width:620px}
+
+/* =====================================================================
+   HEADER + LOGO (reittiviiva, joka päättyy maton hapsuihin)
+   ===================================================================== */
+header.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--color-bg) 88%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid transparent;transition:border-color .3s var(--ease-out),box-shadow .3s var(--ease-out)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:var(--header-h);gap:12px;transition:height .3s var(--ease-out)}
+header.top.is-scrolled{border-bottom-color:var(--color-border);box-shadow:0 8px 24px -18px rgba(23,35,29,.35)}
+header.top.is-scrolled .wrap{height:60px}
+.logo{display:inline-flex;align-items:center;font-family:var(--font-grotesk);font-weight:800;font-size:27px;letter-spacing:-.04em;text-transform:lowercase;text-decoration:none;color:var(--color-primary);line-height:1}
+.logo b{font-weight:inherit;color:inherit}
+.logo:after{content:"";width:46px;height:20px;margin-left:4px;margin-top:8px;flex:none;background:var(--color-accent);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 20'%3E%3Cpath d='M1 12c6 0 9-1 13-3 4-2 6-6 3-7s-5 4-1 7c4 3 10 2 16 1' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M33 6v10M36 5v11M39 5v11M42 6v10' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 20'%3E%3Cpath d='M1 12c6 0 9-1 13-3 4-2 6-6 3-7s-5 4-1 7c4 3 10 2 16 1' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M33 6v10M36 5v11M39 5v11M42 6v10' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+nav{display:flex;align-items:center;gap:2px}
+nav a{color:var(--color-text);text-decoration:none;font-size:15px;font-weight:700;padding:10px 12px;border-radius:var(--radius-pill);min-height:44px;display:inline-flex;align-items:center;transition:background .2s var(--ease-out),color .2s var(--ease-out)}
+nav a:hover{background:var(--color-surface-2);color:var(--color-primary)}
+nav a.btn{margin-left:8px}
+nav a.btn-g,nav a.btn-g:hover{color:var(--btn-primary-fg)}
+
+/* =====================================================================
+   PAINIKKEET
+   ===================================================================== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;border:0;border-radius:var(--radius-pill);padding:13px 26px;font-weight:800;font-size:16px;line-height:1.2;cursor:pointer;text-decoration:none;font-family:inherit;transition:background-color .2s var(--ease-out),color .2s var(--ease-out),box-shadow .2s var(--ease-out),transform .2s var(--ease-out);-webkit-tap-highlight-color:transparent}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-g{background:var(--btn-primary-bg);color:var(--btn-primary-fg);box-shadow:0 12px 26px -14px var(--color-cta-shadow)}
+.btn-g:hover{background:var(--btn-primary-bg-hover);color:var(--btn-primary-fg)}
+.btn-g .arrow{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--color-accent);color:var(--color-on-accent);margin-right:-10px;transition:transform .25s var(--ease-out)}
+.btn-g:hover .arrow{transform:translateX(3px)}
+.btn-o{background:transparent;color:var(--btn-secondary-fg);box-shadow:inset 0 0 0 1.5px var(--btn-secondary-border)}
+.btn-o:hover{background:var(--color-primary);color:var(--color-on-primary)}
+.btn-n{background:var(--color-primary);color:var(--color-on-primary)}
+.btn-n:hover{background:var(--color-primary-hover);color:var(--color-on-primary)}
+.btn-s{min-height:44px;padding:8px 16px;font-size:14px}
+.btn[disabled]{opacity:.8;cursor:progress}
+#go[disabled]:after{content:"";width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* =====================================================================
+   HERO
+   ===================================================================== */
+.hero{position:relative;padding:clamp(32px,5vw,80px) 0 clamp(56px,8vw,110px);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.02fr 1fr;gap:clamp(28px,5vw,72px);align-items:center}
+.pill{display:inline-flex;align-items:center;gap:10px;background:var(--color-surface);color:var(--color-primary);border:1px solid var(--color-border);padding:7px 16px 7px 10px;border-radius:var(--radius-pill);font-size:14px;font-weight:700;margin-bottom:24px;box-shadow:var(--card-shadow)}
+.pill i{width:10px;height:10px;border-radius:50%;background:var(--color-accent);box-shadow:0 0 0 4px var(--color-accent-soft);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px transparent}}
+.hero h1{font-size:clamp(40px,5.8vw,74px);line-height:.95;margin:0 0 26px;letter-spacing:calc(var(--head-tracking) - .01em)}
+.hero h1 .line{display:block;overflow:hidden;padding-bottom:.12em;margin-bottom:-.12em}
+.hero h1 .line>span{display:inline-block;position:relative}
+.hero h1 .line:last-child{color:var(--color-display-alt);font-style:var(--display-alt-style)}
+.hero h1 .swoosh{position:absolute;left:-2%;bottom:-.08em;width:104%;height:.32em;overflow:visible;pointer-events:none}
+.hero h1 .swoosh path{fill:none;stroke:var(--color-accent);stroke-width:7;stroke-linecap:round}
+.hero p.intro{font-size:clamp(18px,1.6vw,20px);max-width:500px;color:var(--color-text-muted);margin:0 0 32px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.hero-facts{display:flex;flex-wrap:wrap;gap:10px 22px;list-style:none;padding:0;margin:34px 0 0;font-size:15px;color:var(--color-text-muted)}
+.hero-facts li{display:flex;align-items:center;gap:8px}
+.hero-facts svg{width:18px;height:18px;color:var(--color-primary-2);flex:none}
+.hero-media{position:relative}
+.hero-media .frame{position:relative;border-radius:var(--radius-l);overflow:hidden;box-shadow:var(--card-shadow-hover);aspect-ratio:4/4.3;background:var(--color-surface-2);isolation:isolate}
+.hero-media .pan{position:absolute;left:0;right:0;top:-6%;height:112%}
+.hero-media .pan img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:46% 62%}
+/* "Likainen" kerros, jonka vaahtolasta pyyhkii pois. Näkyy vain kun animaatio on päällä (html.sweep). */
+.hero-media .dirt{display:none;position:absolute;inset:0;z-index:1}
+.hero-media .dirt img{filter:grayscale(.9) sepia(.5) brightness(.72) contrast(.88)}
+.hero-media .dirt:after{content:"";position:absolute;inset:0;opacity:.55;background:
+  radial-gradient(circle at 18% 72%,rgba(70,55,35,.55) 0 3%,transparent 9%),radial-gradient(circle at 46% 82%,rgba(70,55,35,.45) 0 4%,transparent 10%),
+  radial-gradient(circle at 70% 66%,rgba(70,55,35,.5) 0 2.5%,transparent 8%),radial-gradient(circle at 84% 88%,rgba(70,55,35,.45) 0 3%,transparent 9%),
+  radial-gradient(circle at 30% 90%,rgba(70,55,35,.4) 0 2%,transparent 7%)}
+.hero-media .squeegee{display:none;position:absolute;top:-4%;bottom:-4%;left:0;width:22px;margin-left:-11px;z-index:2;border-radius:12px;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95) 45%,rgba(255,255,255,.95) 55%,rgba(255,255,255,0));
+  box-shadow:0 0 30px 10px rgba(255,255,255,.55)}
+.hero-media .bubbles{position:absolute;inset:0;z-index:3;pointer-events:none}
+.hero-media .bubbles i{position:absolute;width:var(--s,14px);height:var(--s,14px);border-radius:50%;opacity:0;
+  background:radial-gradient(circle at 30% 30%,#fff 0 18%,rgba(255,255,255,.35) 40%,rgba(255,255,255,.08) 70%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)}
+html.sweep .hero-media .dirt,html.sweep .hero-media .squeegee{display:block}
+.hero-badge{position:absolute;left:-22px;bottom:34px;z-index:4;background:var(--color-surface);border-radius:16px;padding:14px 18px;box-shadow:var(--card-shadow-hover);display:flex;gap:12px;align-items:center;max-width:290px}
+.hero-badge b{display:block;font-family:var(--font-head);font-weight:var(--head-weight);font-size:21px;color:var(--color-primary);line-height:1.1;letter-spacing:-.02em}
+.hero-badge span{font-size:14px;color:var(--color-text-muted);line-height:1.35}
+.hero-badge .tick{width:40px;height:40px;flex:none;border-radius:50%;background:var(--color-accent);color:var(--color-on-accent);display:grid;place-items:center}
+.hero-badge .tick svg{width:22px;height:22px}
+
+/* =====================================================================
+   OSIOT
+   ===================================================================== */
+section{padding:clamp(64px,9vw,120px) 0}
+.card{overflow-wrap:break-word;background:var(--card-bg);border-radius:var(--card-radius);padding:28px;box-shadow:var(--card-shadow);border:1px solid var(--card-border)}
+.dark{background:var(--color-dark-bg);color:var(--color-on-dark)}
+.dark h2,.dark h3{color:var(--color-on-dark)}
+.dark .lead{color:var(--color-on-dark-muted)}
+.dark .eyebrow{color:var(--color-dark-accent)}
+.dark :focus-visible{outline-color:var(--color-focus-on-dark)}
+.split{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(28px,5vw,64px);align-items:center}
+.split img{width:100%;border-radius:var(--card-radius)}
+
+/* --- näin se toimii: reitti + pakettiauto --- */
+.steps{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:20px}
+.route{position:absolute;left:0;right:0;top:-36px;height:140px;width:100%;overflow:visible;pointer-events:none}
+.route .base{fill:none;stroke:var(--route-base);stroke-width:3;stroke-dasharray:2 9;stroke-linecap:round}
+.route .line{fill:none;stroke:var(--route-color);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.route .fringe{fill:none;stroke:var(--route-color);stroke-width:3;stroke-linecap:round}
+.van{display:none;position:absolute;left:0;top:0;width:52px;height:34px;z-index:1;color:var(--color-primary);will-change:transform}
+html.route-anim .van{display:block}
+.steps-track{display:none;position:absolute;left:33px;top:34px;bottom:34px;width:3px;background:var(--route-base);border-radius:3px}
+.steps-track i{position:absolute;inset:0;background:var(--route-color);border-radius:3px;transform-origin:center top}
+.step{position:relative;z-index:2;text-align:center;padding:0 10px}
+.step .num{position:relative;width:68px;height:68px;margin:0 auto 22px;border-radius:50%;background:var(--color-surface);border:1.5px solid var(--color-border);display:grid;place-items:center;color:var(--color-primary);box-shadow:var(--card-shadow)}
+.step .num svg{width:30px;height:30px}
+.step .num em{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:50%;background:var(--badge-bg);color:var(--badge-fg);font-style:normal;font-size:13px;font-weight:800;display:grid;place-items:center}
+.step h3{font-size:26px}
+.step p{color:var(--color-text-muted);margin:0 auto;max-width:320px}
+.num{width:44px;height:44px;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;font-weight:800;font-size:20px;margin-bottom:12px}
+
+/* --- hinnat --- */
+.prices{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px}
+.price-card{color:var(--color-text);position:relative;overflow:hidden;padding:30px 28px 26px;transition:transform .35s var(--ease-out),box-shadow .35s var(--ease-out)}
+.price-card:hover{transform:translateY(-4px);box-shadow:var(--card-shadow-hover)}
+.price-card .kind{font-weight:800;font-size:17px;color:var(--color-primary);padding-right:64px}
+.price-card .size{display:inline-block;margin-top:6px;font-size:14px;font-weight:700;color:var(--color-text-muted);background:var(--color-surface-2);padding:3px 10px;border-radius:var(--radius-pill)}
+.price{font-family:var(--font-head);font-size:66px;font-weight:var(--head-weight);line-height:1;color:var(--color-primary);margin:22px 0 6px;letter-spacing:-.04em}
+.price small{display:block;margin-top:8px;font-family:var(--font-body);font-size:15px;color:var(--color-text-muted);font-weight:600;letter-spacing:0}
+.price-card ul{list-style:none;padding:16px 0 0;margin:16px 0 0;border-top:1px solid var(--color-border);font-size:15px;color:var(--color-text-muted)}
+.price-card li{padding:3px 0}
+.price-card .rug{position:absolute;right:-12px;top:-10px;width:100px;height:100px;color:var(--color-accent)}
+.price-card .rug .r-bg{fill:var(--color-surface-2)}
+.price-note{color:var(--color-on-dark-muted);font-size:15px;margin-top:18px;max-width:640px}
+.includes{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 30px;padding:0;list-style:none}
+.includes li{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);padding:7px 14px;border-radius:var(--radius-pill);font-size:15px}
+.includes svg{width:16px;height:16px;color:var(--color-dark-accent)}
+.media-tall{border-radius:var(--card-radius);overflow:hidden;aspect-ratio:4/5;background:var(--color-dark-bg-2)}
+.media-tall img{width:100%;height:100%;object-fit:cover;object-position:52% 50%;border-radius:0}
+
+/* --- hyödyt --- */
+.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.benefit{padding:26px}
+.benefit .ic{width:48px;height:48px;border-radius:14px;background:var(--color-accent-soft);color:var(--color-primary);display:grid;place-items:center;margin-bottom:16px}
+.benefit .ic svg{width:24px;height:24px}
+.benefit h3{font-size:21px}
+.benefit p{margin:0;color:var(--color-text-muted);font-size:16px}
+ul.check{list-style:none;padding:0}
+ul.check li{padding-left:32px;position:relative;margin:12px 0}
+ul.check li:before{content:"";position:absolute;left:0;top:4px;width:20px;height:20px;border-radius:50%;background:var(--color-accent)}
+.area{background:var(--color-surface-2);border-radius:var(--card-radius);padding:30px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;margin-top:22px}
+.area h3{margin:0 0 4px}
+.area p{margin:0;color:var(--color-text-muted)}
+
+/* --- UKK --- */
+.faq{max-width:820px}
+.faq details{border-bottom:1px solid var(--color-border)}
+.faq details:first-child{border-top:1px solid var(--color-border)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:22px 4px;font-family:var(--font-head);font-weight:var(--head-weight);letter-spacing:-.015em;font-size:21px;color:var(--color-primary);min-height:44px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:"+";flex:none;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--color-border-strong);display:grid;place-items:center;font-family:var(--font-body);font-weight:500;font-size:22px;line-height:1;transition:transform .3s var(--ease-out),background-color .2s}
+.faq details[open] summary:after{transform:rotate(45deg);background-color:var(--color-accent);border-color:var(--color-accent);color:var(--color-on-accent)}
+.faq summary:hover{color:var(--color-primary-2)}
+.faq .a{padding:0 4px 22px;color:var(--color-text-muted);max-width:680px}
+.faq .a p{margin:0 0 10px}
+
+/* =====================================================================
+   LOMAKKEET
+   ===================================================================== */
+.booking{background:linear-gradient(180deg,var(--color-surface-2),var(--color-bg) 70%)}
+.booking-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:36px;align-items:start}
+.booking-aside{position:sticky;top:calc(var(--header-h) + 20px);display:grid;gap:14px}
+.booking-aside .card{padding:22px}
+.booking-aside h3{font-size:19px;margin-bottom:6px}
+.booking-aside p{margin:0;font-size:15px;color:var(--color-text-muted)}
+.pickup-note{display:flex;gap:12px;align-items:flex-start;background:var(--color-accent-soft);border:1px solid var(--color-accent);border-radius:14px;padding:14px 16px;margin:0 0 22px;font-size:15px}
+.pickup-note b{color:var(--color-primary)}
+.pickup-note svg{width:22px;height:22px;flex:none;color:var(--color-primary);margin-top:1px}
+form.card{padding:clamp(22px,3.6vw,40px)}
+fieldset{border:0;margin:0 0 6px;padding:0 0 26px;min-width:0}
+fieldset+fieldset{border-top:1px solid var(--color-border);padding-top:26px}
+legend{float:left;width:100%;display:flex;align-items:center;gap:12px;padding:0;margin:0 0 8px;font-family:var(--font-head);font-weight:var(--head-weight);letter-spacing:-.015em;font-size:23px;color:var(--color-primary)}
+legend+*{clear:both}
+legend .n{width:30px;height:30px;border-radius:50%;background:var(--badge-bg);color:var(--badge-fg);font-family:var(--font-body);font-size:14px;font-weight:800;display:grid;place-items:center;flex:none;letter-spacing:0}
+.hint{font-size:14px;color:var(--color-text-muted);margin:4px 0 0}
+label{display:block;font-weight:700;margin:16px 0 6px;font-size:15px;color:var(--color-text)}
+input,select,textarea{width:100%;min-height:50px;padding:12px 14px;border:1.5px solid var(--input-border);border-radius:var(--input-radius);font-size:17px;font-family:inherit;color:var(--color-text);background:var(--input-bg);transition:border-color .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+textarea{min-height:90px;resize:vertical}
+input:hover,select:hover,textarea:hover{border-color:var(--color-text-muted)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-primary-2);box-shadow:0 0 0 4px color-mix(in srgb,var(--color-primary-2) 20%,transparent)}
+input:user-invalid,textarea:user-invalid{border-color:var(--color-danger)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.row3{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:16px}
+.chk{display:flex;gap:12px;align-items:flex-start;font-weight:500;margin:14px 0;line-height:1.5;cursor:pointer}
+.chk input{width:24px;height:24px;min-height:0;flex:none;margin:1px 0 0;accent-color:var(--color-primary);cursor:pointer}
+.qty-wrap{background:var(--color-bg);border:1px solid var(--color-border);border-radius:14px;padding:4px 16px 16px}
+.qty{display:flex;align-items:center;gap:10px}
+.qty button{width:48px;height:48px;border-radius:12px;border:1.5px solid var(--input-border);background:var(--input-bg);font-size:24px;line-height:1;color:var(--color-primary);cursor:pointer;font-family:inherit;transition:background .2s,border-color .2s,transform .15s}
+.qty button:hover{background:var(--color-accent-soft);border-color:var(--color-primary-2)}
+.qty button:active{transform:scale(.94)}
+.qty input{width:76px;text-align:center;font-weight:800;font-size:19px}
+details.terms-box{margin-top:18px;border:1px solid var(--color-border);border-radius:var(--radius-s);background:var(--color-bg)}
+details.terms-box summary{cursor:pointer;padding:14px 16px;min-height:48px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.terms{font-size:15px;max-height:360px;overflow:auto;background:var(--color-surface);border-top:1px solid var(--color-border);border-radius:0 0 var(--radius-s) var(--radius-s);padding:16px 18px}
+.terms h3{font-size:18px;margin:16px 0 4px}
+.submit-row{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:10px}
+.submit-row p{margin:0}
+#msg:empty{display:none}
+
+/* kalenteri (common.js luo merkinnät) */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:10px}
+.cal .h{font-size:12px;text-align:center;color:var(--color-text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:4px 0}
+.cal button{border:1.5px solid transparent;background:var(--cal-bg);border-radius:12px;padding:8px 2px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;min-height:58px;color:var(--color-text);transition:background .2s var(--ease-out),border-color .2s var(--ease-out),transform .2s var(--ease-out)}
+.cal button small{display:block;font-size:11px;font-weight:600;color:var(--color-text-muted);margin-top:2px}
+.cal button.free{background:var(--cal-free-bg);border-color:var(--cal-free-border);color:var(--cal-free-fg)}
+.cal button.free small{color:var(--color-primary-2)}
+.cal button.free:hover{background:var(--color-accent-soft);border-color:var(--color-accent);transform:translateY(-2px)}
+.cal button.closed{background:transparent;border-color:var(--color-border);color:var(--ink-400);cursor:not-allowed;font-weight:500}
+.cal button.closed small{color:var(--ink-400)}
+.cal button.sel{background:var(--cal-sel-bg);border-color:var(--cal-sel-bg);color:var(--cal-sel-fg);box-shadow:0 0 0 3px var(--color-accent),0 10px 20px -10px var(--color-cta-shadow)}
+.cal button.sel small{color:var(--color-on-dark-muted)}
+.legend{font-size:14px;color:var(--color-text-muted);margin-top:12px}
+.legend b{color:var(--color-primary)}
+.sum{background:var(--sum-bg);color:var(--sum-fg);border-radius:16px;padding:18px 22px;margin:22px 0 6px;font-size:16px;line-height:1.7}
+.sum b{font-size:24px;color:#fff;font-family:var(--font-head);font-weight:var(--head-weight);letter-spacing:-.02em}
+.sum small{color:var(--color-on-dark-muted)}
+.sum .err{color:var(--color-dark-accent)}
+.err{color:var(--color-danger);font-weight:700}
+.ok{color:var(--color-primary-2);font-weight:700}
+
+/* kuvan lataus (myyjä) */
+.drop{position:relative;display:flex;align-items:center;gap:16px;margin-top:8px;padding:20px;border:2px dashed var(--color-border-strong);border-radius:16px;background:var(--color-bg);cursor:pointer;font-weight:700;transition:border-color .2s,background .2s}
+.drop:hover,.drop:focus-within{border-color:var(--color-primary-2);background:var(--color-accent-soft)}
+.drop:focus-within{outline:3px solid var(--color-focus);outline-offset:3px}
+.drop svg{width:40px;height:40px;color:var(--color-primary);flex:none}
+.drop span small{display:block;font-weight:500;color:var(--color-text-muted);font-size:14px}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;min-height:0;width:100%;height:100%}
+#prev{max-width:260px;margin-top:12px;border-radius:12px;box-shadow:var(--card-shadow)}
+
+/* edistyminen (myyjä) */
+.progress{position:sticky;top:calc(var(--header-h) - 1px);z-index:20;background:color-mix(in srgb,var(--color-bg) 95%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--color-border);margin:0 0 22px}
+.progress ol{list-style:none;display:flex;gap:8px;margin:0;padding:10px 0;overflow-x:auto}
+.progress li{flex:1;min-width:84px;font-size:13px;font-weight:700;color:var(--color-text-muted);display:flex;flex-direction:column;gap:6px}
+.progress li:before{content:"";height:5px;border-radius:5px;background:var(--color-border);transition:background .3s}
+.progress li.done{color:var(--color-primary)}
+.progress li.done:before{background:var(--color-accent)}
+
+/* =====================================================================
+   FOOTER
+   ===================================================================== */
+footer{background:var(--color-dark-bg-2);color:var(--color-on-dark-muted);padding:64px 0 calc(32px + env(safe-area-inset-bottom));font-size:15px}
+footer b{color:#fff}
+footer a{color:var(--color-on-dark);text-decoration:none}
+footer a:hover{color:#fff;text-decoration:underline}
+footer :focus-visible{outline-color:var(--color-focus-on-dark)}
+footer .logo{color:var(--color-on-dark);font-size:32px;margin:0 0 12px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:32px}
+.foot-grid h3{font-size:14px;font-family:var(--font-body);font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--color-dark-accent);margin:0 0 12px}
+.foot-grid ul{list-style:none;margin:0;padding:0}
+.foot-grid li{margin:0 0 4px}
+.foot-grid li a{display:inline-block;padding:6px 0}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.14);margin-top:40px;padding-top:20px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between}
+
+/* mobiilin alapalkki */
+.mbar{display:none}
+
+/* teemavalitsin (näkyy vain osoitteella ?teemat) */
+.theme-picker{position:fixed;left:16px;bottom:16px;z-index:80;display:flex;gap:6px;align-items:center;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-pill);padding:6px 6px 6px 14px;box-shadow:var(--card-shadow-hover);font-size:13px;font-weight:800}
+.theme-picker button{min-height:36px;border-radius:var(--radius-pill);border:1.5px solid var(--color-border);background:var(--color-bg);padding:0 12px;font-family:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.theme-picker button[aria-pressed="true"]{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-on-primary)}
+.theme-picker i{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+/* =====================================================================
+   TAULUKOT, ADMIN, VAHVISTUS
+   ===================================================================== */
+table{width:100%;border-collapse:collapse;background:var(--color-surface);font-size:15px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--color-border);text-align:left;vertical-align:top}
+th{background:var(--color-primary);color:var(--color-on-primary);font-weight:700;font-size:14px}
+.draft{background:var(--amber-100);border:2px dashed #C08A1E;padding:10px 14px;border-radius:12px;font-weight:700;color:var(--amber-700)}
+canvas.sig{width:100%;height:200px;border:2px dashed var(--color-border-strong);border-radius:12px;background:#fff;touch-action:none}
+.bar{height:10px;background:var(--color-border);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--color-primary-2)}
+.bar i.hot{background:var(--color-danger)}
+
+/* =====================================================================
+   RESPONSIIVISUUS
+   ===================================================================== */
+@media (max-width:980px){
+  .booking-grid{grid-template-columns:minmax(0,1fr)}
+  .booking-aside{position:static;grid-template-columns:1fr 1fr}
+  .benefits{grid-template-columns:1fr 1fr}
+  #hinnat .split{grid-template-columns:1fr}
+  #hinnat .media-tall{aspect-ratio:16/9}
+}
+@media (max-width:800px){
+  :root{--header-h:62px}
+  body{font-size:16.5px}
+  .hero-grid,.split,.prices,.row,.row3,.foot-grid{grid-template-columns:1fr}
+  .hero-media .frame{aspect-ratio:4/3.2}
+  .hero h1{font-size:min(11.2vw,64px)}
+  .hero-badge{left:12px;bottom:-22px}
+  .hero-media{margin-bottom:22px}
+  nav a.hide{display:none}
+  .route,.van,html.route-anim .van{display:none}
+  .steps-track{display:block}
+  .steps{grid-template-columns:1fr;gap:34px}
+  .step{display:grid;grid-template-columns:68px 1fr;gap:4px 18px;text-align:left;padding:0}
+  .step .num{grid-row:span 2;margin:0}
+  .step p{margin:0}
+  .benefits,.booking-aside{grid-template-columns:1fr}
+  .area{grid-template-columns:1fr}
+  .media-tall{aspect-ratio:4/3}
+  body.has-mbar{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  .mbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--color-bg) 96%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--color-border);transition:transform .35s var(--ease-out)}
+  .mbar .btn{min-height:50px;padding:10px 12px}
+  .mbar.is-hidden{transform:translateY(110%)}
+  .cal{gap:4px}
+  .cal button{min-height:52px;font-size:15px;border-radius:10px}
+  .cal button small{font-size:10px}
+  .theme-picker{bottom:86px}
+}
+@media (max-width:480px){nav a{padding:8px 9px;font-size:14px}.logo{font-size:23px}.logo:after{width:38px}}
+@media (max-width:420px){.wrap{padding:0 16px}.cal button small{display:none}
+  form.card{padding:20px 14px}.qty-wrap{padding:4px 12px 14px}
+  .cal{gap:3px}.cal button{padding:0;font-size:13px;letter-spacing:-.02em;white-space:nowrap;min-height:48px;border-radius:8px}
+  .theme-picker{left:8px;right:8px;justify-content:center;flex-wrap:wrap}}
+
+/* liike pois päältä */
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* hero-intro piilossa vain kun motion.js on tulossa (html.motion-pending); varmistus poistaa luokan 2,5 s jälkeen */
+.motion-pending [data-hero],.motion-pending [data-hero-media]{opacity:0}
+
+/* =====================================================================
+   TULOSTUS
+   ===================================================================== */
+@media print{
+  header.top,.noprint,footer,.mbar,.progress,.skip,.theme-picker{display:none!important}
+  body{background:#fff;font-size:11pt;color:#000}
+  .card{box-shadow:none;padding:0;border:0}
+  section{padding:0}
+  .pb{page-break-before:always}
+  th{background:#eee!important;color:#000!important}
+  h1,h2,h3{color:#000}
+}

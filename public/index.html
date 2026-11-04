@@ -1,49 +1,323 @@
-<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="fi" data-theme="metsa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mattorundi – mattojen nouto, pesu ja palautus Tampereella</title>
 <meta name="description" content="Mattorundi hakee, pesee ja palauttaa matot kotiovellesi Tampereella. Keskikokoinen matto 39 €, iso 49 €.">
-<link rel="stylesheet" href="styles.css"></head><body>
-<header class="top"><div class="wrap"><a class="logo" href="/"><b>MATTO</b>RUNDI</a>
-<nav><a class="hide" href="#miten">Näin se toimii</a><a class="hide" href="#hinnat">Hinnat</a><a href="#varaa">Varaa</a><a class="hide" href="/sopimus" title="Myyjille">Myyjä</a></nav></div></header>
-<div class="hero"><div class="wrap"><span class="pill">Tampere · nouto kotoa</span>
-<h1>Me haemme. Me pesemme. <span>Me palautamme.</span></h1>
-<p>Puhtaus ilman vaivaa. Haemme matot suoraan lattialta, pesemme ne huolella ja tuomme takaisin paikoilleen – sinun ei tarvitse kantaa mitään.</p>
-<p style="margin-top:28px"><a class="btn btn-g" href="#varaa">Varaa nouto</a> &nbsp; <a class="btn btn-o" href="tel:+358404108581">Soita 040 41 08581</a></p></div></div>
+<meta name="theme-color" content="#FBF8F1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.css">
+<link rel="stylesheet" href="styles.css">
+<script>
+/* Teeman esikatselu: ?teema=metsa|petrooli|savi (valitsin näkyy osoitteella ?teemat) */
+(function () { var q = new URLSearchParams(location.search), t = q.get('teema'); try { if (!t && q.has('teemat')) t = localStorage.getItem('mr-teema'); } catch (e) {}
+  if (t && /^(metsa|petrooli|savi)$/.test(t)) document.documentElement.setAttribute('data-theme', t); })();
+/* Hero-intro piilotetaan vasta kun animaatio on tulossa. Jos kirjastot eivät lataudu, sisältö näkyy 2,5 s kuluttua joka tapauksessa. */
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.documentElement.classList.add('motion-pending'); setTimeout(function () { document.documentElement.classList.remove('motion-pending'); }, 2500); }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js" defer></script>
+<script src="motion.js" defer></script>
+</head>
+<body class="has-mbar">
+<a class="skip" href="#varaa">Siirry varaukseen</a>
 
-<section id="miten"><div class="wrap"><h2>Näin se toimii</h2><p class="lead">Kolme vaihetta – sinä et tee niistä yhtäkään.</p>
-<div class="steps">
-<div class="card"><div class="num">1</div><h3>Nouto</h3><p>Valitse päivä kalenterista. Haemme matot lattialta, tarvittaessa myös huonekalujen alta, ja suojaamme ne kuljetukseen.</p></div>
-<div class="card"><div class="num">2</div><h3>Pesu &amp; kuivaus</h3><p>Pesumenetelmä valitaan maton materiaalin mukaan. Pesu ja kuivaus kestävät tavallisesti noin 3 päivää.</p></div>
-<div class="card"><div class="num">3</div><h3>Palautus</h3><p>Tuomme puhtaat matot takaisin ja asetamme ne paikoilleen. Maksu palautuksen yhteydessä.</p></div>
-</div></div></section>
+<header class="top" data-shrink>
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="Mattorundi – etusivu"><b>MATTO</b>RUNDI</a>
+    <nav aria-label="Päävalikko">
+      <a class="hide" href="#miten">Näin se toimii</a>
+      <a class="hide" href="#hinnat">Hinnat</a>
+      <a class="hide" href="#ukk">UKK</a>
+      <a class="btn btn-g btn-s" href="#varaa">Varaa nouto</a>
+    </nav>
+  </div>
+</header>
 
-<section id="hinnat" class="dark"><div class="wrap split"><div><h2>Selkeät hinnat</h2><p class="lead">Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Ei piilokuluja.</p>
-<div class="prices"><div class="card" style="color:var(--ink)"><div>Keskikokoinen matto</div><div class="price">39 €</div><small>1–2,4 m²</small></div>
-<div class="card" style="color:var(--ink)"><div>Iso matto</div><div class="price">49 €</div><small>2,5–3,5 m²</small></div></div>
-<p style="color:#b8c6d3;font-size:14px;margin-top:14px">Hinnat sis. ALV 25,5 %. Yli 3,5 m² ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen.</p></div>
-<img src="img/pickup.jpg" alt="Mattorundin työntekijät kantavat rullattua mattoa pakettiautoon" loading="lazy"></div></section>
+<main>
+<!-- 1. HERO -->
+<div class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="pill" data-hero><i aria-hidden="true"></i><span id="pickupPill">Tampere · nouto kotiovelta</span></span>
+      <h1 aria-label="Me haemme. Me pesemme. Me palautamme.">
+        <span class="line" aria-hidden="true"><span data-hero-line>Me haemme.</span></span>
+        <span class="line" aria-hidden="true"><span data-hero-line>Me pesemme.</span></span>
+        <span class="line" aria-hidden="true"><span data-hero-line>Me palautamme.<svg class="swoosh" viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true"><path data-swoosh d="M4 20 C 70 8, 150 6, 296 16"/></svg></span></span>
+      </h1>
+      <p class="intro" data-hero>Puhtaus ilman vaivaa. Haemme matot suoraan lattialta, pesemme ne huolella ja tuomme takaisin paikoilleen – sinun ei tarvitse kantaa mitään.</p>
+      <div class="hero-cta" data-hero>
+        <a class="btn btn-g" href="#varaa">Varaa nouto
+          <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+        <a class="btn btn-o" href="tel:+358404108581">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+          Soita 040 41 08581</a>
+      </div>
+      <ul class="hero-facts" data-hero>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Nouto ja palautus sisältyvät hintaan</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Maksu palautuksen yhteydessä</li>
+      </ul>
+    </div>
+    <div class="hero-media" data-hero-media>
+      <div class="frame">
+        <div class="pan" data-parallax>
+          <img src="img/hero.jpg" width="1280" height="720" alt="Valoisa olohuone, jonka lattialla on värikäs, puhdas matto" fetchpriority="high">
+          <div class="dirt" aria-hidden="true"><img src="img/hero.jpg" width="1280" height="720" alt=""></div>
+        </div>
+        <div class="squeegee" aria-hidden="true"></div>
+        <div class="bubbles" aria-hidden="true"></div>
+      </div>
+      <div class="hero-badge" data-badge>
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><b>Noin 3 päivää</b><span>pesu ja kuivaus tavallisesti</span></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<section><div class="wrap split"><div><h2>Kenelle?</h2><ul class="check">
-<li>Kun mattojen kantaminen on fyysisesti raskasta</li><li>Kiireisille perheille, joilla on paljon mattoja ja vähän aikaa</li>
-<li>Kun autoa ei ole – itsepalvelupesulaan ei tarvitse lähteä</li><li>Kaikille, jotka haluavat raikkaamman sisäilman: matot keräävät pölyä ja allergeeneja</li></ul></div>
-<div class="card"><h3 style="margin-top:0">Palvelualue</h3><p>Tampere. Noudot keskitetään samalle reitille, mikä säästää aikaa ja päästöjä.</p>
-<p><b>Yhteystiedot</b><br><a href="mailto:mattorundi@gmail.com">mattorundi@gmail.com</a><br><a href="tel:+358404108581">040 41 08581</a></p></div></div></section>
+<!-- 2. NÄIN SE TOIMII -->
+<section id="miten">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>Näin se toimii</p>
+    <h2 data-reveal>Kolme vaihetta – sinä et tee niistä yhtäkään.</h2>
+    <p class="lead" data-reveal>Valitset päivän, me hoidamme loput: kantamisen, pesun, kuivauksen ja tuomisen takaisin.</p>
+    <div class="steps">
+      <!-- Reittiviiva, joka päättyy maton hapsuihin. Pakettiauto ajaa sitä pitkin vierittäessä. -->
+      <svg class="route" viewBox="0 0 1200 140" preserveAspectRatio="none" aria-hidden="true">
+        <path class="base" d="M0 70 C80 70 120 46 200 70 C280 94 330 108 400 98 C470 88 520 70 600 70 C680 70 720 92 765 84 C820 74 846 36 812 24 C776 12 752 56 796 74 C850 94 920 70 1000 70 C1060 70 1110 76 1158 70"/>
+        <path class="line" data-route d="M0 70 C80 70 120 46 200 70 C280 94 330 108 400 98 C470 88 520 70 600 70 C680 70 720 92 765 84 C820 74 846 36 812 24 C776 12 752 56 796 74 C850 94 920 70 1000 70 C1060 70 1110 76 1158 70"/>
+        <path class="fringe" data-fringe d="M1162 56v28M1170 54v32M1178 54v32M1186 54v32M1194 56v28"/>
+      </svg>
+      <svg class="van" data-van viewBox="0 0 52 34" aria-hidden="true">
+        <path d="M3 22V8a3 3 0 0 1 3-3h24v17" fill="currentColor"/><path d="M30 10h9l7 7v5H30z" fill="currentColor"/>
+        <path d="M33 12h5l4.5 5H33z" fill="#fff" opacity=".85"/><rect x="7" y="9" width="17" height="4" rx="2" style="fill:var(--color-accent)"/>
+        <rect x="2" y="21" width="45" height="5" rx="2.5" fill="currentColor"/><circle cx="12" cy="27" r="4.5" fill="#222"/><circle cx="12" cy="27" r="1.8" fill="#ddd"/><circle cx="38" cy="27" r="4.5" fill="#222"/><circle cx="38" cy="27" r="1.8" fill="#ddd"/>
+      </svg>
+      <div class="steps-track" aria-hidden="true"><i data-draw></i></div>
+      <div class="step" data-step>
+        <div class="num"><em>1</em>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13V7a1 1 0 0 1 1-1h10v7"/><path d="M14 9h4l3 4v3h-2"/><path d="M3 13h11v3H8"/><circle cx="6.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/></svg></div>
+        <h3>Haemme</h3>
+        <p>Valitse päivä kalenterista. Haemme matot lattialta, tarvittaessa myös huonekalujen alta, ja suojaamme ne kuljetukseen.</p>
+      </div>
+      <div class="step" data-step>
+        <div class="num"><em>2</em>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5"/></svg></div>
+        <h3>Pesemme</h3>
+        <p>Pesumenetelmä valitaan maton materiaalin mukaan. Pesu ja kuivaus kestävät tavallisesti noin 3 päivää.</p>
+      </div>
+      <div class="step" data-step>
+        <div class="num"><em>3</em>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-5.5h6V20"/></svg></div>
+        <h3>Palautamme</h3>
+        <p>Tuomme puhtaat matot takaisin ja asetamme ne paikoilleen. Maksu palautuksen yhteydessä.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-<section id="varaa" style="background:#fff"><div class="wrap"><h2>Varaa nouto</h2><p class="lead">Kerro mattojen määrä – kalenteri näyttää päivät, joille mahtuu.</p>
-<form id="f" class="card" style="max-width:820px">
-<div class="row"><div><label>Keskikokoiset (1–2,4 m²) · 39 €</label><div class="qty"><button type="button" data-q="medium" data-s="-1">−</button><input id="medium" type="number" min="0" value="1"><button type="button" data-q="medium" data-s="1">+</button></div></div>
-<div><label>Isot (2,5–3,5 m²) · 49 €</label><div class="qty"><button type="button" data-q="large" data-s="-1">−</button><input id="large" type="number" min="0" value="0"><button type="button" data-q="large" data-s="1">+</button></div></div></div>
-<label>Noutopäivä</label><div id="cal"></div>
-<div class="sum" id="sum"></div>
-<div class="row"><div><label>Nimi *</label><input id="name" required autocomplete="name"></div><div><label>Puhelin *</label><input id="phone" required type="tel" autocomplete="tel"></div></div>
-<label>Sähköposti (vahvistusta varten)</label><input id="email" type="email" autocomplete="email">
-<div class="row3"><div style="grid-column:span 1"><label>Katuosoite *</label><input id="address" required autocomplete="street-address"></div><div><label>Postinumero</label><input id="postal" autocomplete="postal-code"></div><div><label>Kaupunki</label><input id="city" value="Tampere"></div></div>
-<label>Lisätiedot (ovikoodi, kerros, mattojen materiaali…)</label><textarea id="notes" rows="2"></textarea>
-<details style="margin-top:14px"><summary><b>Tilausehdot ja peruuttamisoikeus</b> (luonnos)</summary><div class="terms" id="terms"></div></details>
-<label class="chk"><input type="checkbox" id="acceptTerms"> Olen lukenut tilausehdot ja tiedot 14 päivän peruuttamisoikeudesta. *</label>
-<label class="chk"><input type="checkbox" id="startEarly"> Pyydän, että nouto ja pesu aloitetaan jo peruuttamisaikana. Ymmärrän, että jos peruutan palvelun alettua, maksan suoritetusta osuudesta, ja että menetän peruuttamisoikeuden, kun palvelu on kokonaan suoritettu.</label>
-<label class="chk"><input type="checkbox" id="marketingConsent"> Saa muistuttaa minua seuraavasta pesusta sähköpostilla/tekstiviestillä.</label>
-<p id="msg"></p><button class="btn btn-g" id="go">Lähetä varaus</button></form></div></section>
+<!-- 3. HINNAT -->
+<section id="hinnat" class="dark">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow" data-reveal>Hinnat</p>
+      <h2 data-reveal>Selkeät hinnat. Ei piilokuluja.</h2>
+      <ul class="includes" data-reveal aria-label="Hinta sisältää">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Nouto</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Pesu</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Kuivaus</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Palautus</li>
+      </ul>
+      <div class="prices">
+        <div class="card price-card" data-reveal-card>
+          <svg class="rug" viewBox="0 0 100 100" aria-hidden="true"><rect class="r-bg" x="24" y="32" width="52" height="36" rx="4"/><path d="M32 40h36M32 50h36M32 60h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M80 36v28M85 36v28M20 36v28M15 36v28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <div class="kind">Keskikokoinen matto</div>
+          <span class="size">1–2,4 m²</span>
+          <div class="price">39 € <small>/ matto</small></div>
+          <ul><li>esim. 80 × 150 cm tai 120 × 180 cm</li></ul>
+        </div>
+        <div class="card price-card" data-reveal-card>
+          <svg class="rug" viewBox="0 0 100 100" aria-hidden="true"><rect class="r-bg" x="18" y="26" width="64" height="48" rx="4"/><path d="M26 36h48M26 46h48M26 56h48M26 66h48" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M86 30v40M91 30v40M14 30v40M9 30v40" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <div class="kind">Iso matto</div>
+          <span class="size">2,5–3,5 m²</span>
+          <div class="price">49 € <small>/ matto</small></div>
+          <ul><li>esim. 140 × 200 cm tai 160 × 200 cm</li></ul>
+        </div>
+      </div>
+      <p class="price-note" data-reveal>Hinnat sis. ALV 25,5 %. Yli 3,5 m² ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen.</p>
+    </div>
+    <div class="media-tall" data-reveal>
+      <img src="img/pickup.jpg" width="1152" height="864" alt="Mattorundin työntekijät kantavat rullattua mattoa pakettiautoon" loading="lazy" decoding="async">
+    </div>
+  </div>
+</section>
 
-<footer><div class="wrap"><b>Mattorundi</b> · Tampere · mattorundi@gmail.com · 040 41 08581 · Y-tunnus: [täydennetään]<br>TAMK Proakatemia / Valaja Team osk · <a href="/admin" style="color:#b8c6d3">Ylläpito</a> · <a href="/sopimus" style="color:#b8c6d3">Myyjä: kirjaa sopimus</a></div></footer>
+<!-- 4. VARAUS -->
+<section id="varaa" class="booking">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>Varaa nouto</p>
+    <h2 data-reveal>Valitse matot ja noutopäivä</h2>
+    <p class="lead" data-reveal>Kerro mattojen määrä – kalenteri näyttää päivät, joille mahtuu, ja arvioidun palautuspäivän.</p>
+    <div class="booking-grid">
+      <form id="f" class="card">
+        <div class="pickup-note" id="pickupNote" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          <span></span>
+        </div>
+        <fieldset>
+          <legend><span class="n" aria-hidden="true">1</span>Matot</legend>
+          <div class="row">
+            <div class="qty-wrap"><label for="medium">Keskikokoiset (1–2,4 m²) · 39 €</label><div class="qty"><button type="button" data-q="medium" data-s="-1" aria-label="Vähennä keskikokoisia">−</button><input id="medium" type="number" min="0" value="1" inputmode="numeric"><button type="button" data-q="medium" data-s="1" aria-label="Lisää keskikokoisia">+</button></div></div>
+            <div class="qty-wrap"><label for="large">Isot (2,5–3,5 m²) · 49 €</label><div class="qty"><button type="button" data-q="large" data-s="-1" aria-label="Vähennä isoja">−</button><input id="large" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="large" data-s="1" aria-label="Lisää isoja">+</button></div></div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend><span class="n" aria-hidden="true">2</span>Noutopäivä</legend>
+          <p class="hint">Valitse vihreä päivä. Arvioitu palautuspäivä näkyy heti valinnan jälkeen.</p>
+          <div id="cal" aria-live="polite"></div>
+          <div class="sum" id="sum" aria-live="polite"></div>
+        </fieldset>
+        <fieldset>
+          <legend><span class="n" aria-hidden="true">3</span>Yhteystiedot</legend>
+          <div class="row"><div><label for="name">Nimi *</label><input id="name" required autocomplete="name"></div><div><label for="phone">Puhelin *</label><input id="phone" required type="tel" autocomplete="tel"></div></div>
+          <label for="email">Sähköposti (vahvistusta varten)</label><input id="email" type="email" autocomplete="email">
+          <div class="row3"><div><label for="address">Katuosoite *</label><input id="address" required autocomplete="street-address"></div><div><label for="postal">Postinumero</label><input id="postal" autocomplete="postal-code" inputmode="numeric"></div><div><label for="city">Kaupunki</label><input id="city" value="Tampere" autocomplete="address-level2"></div></div>
+          <label for="notes">Lisätiedot (ovikoodi, kerros, mattojen materiaali…)</label><textarea id="notes" rows="2"></textarea>
+        </fieldset>
+        <fieldset>
+          <legend><span class="n" aria-hidden="true">4</span>Ehdot ja vahvistus</legend>
+          <details class="terms-box" id="ehdot"><summary><b>Tilausehdot ja peruuttamisoikeus</b> (luonnos)</summary><div class="terms" id="terms" data-lenis-prevent tabindex="0"></div></details>
+          <label class="chk"><input type="checkbox" id="acceptTerms"> Olen lukenut tilausehdot ja tiedot 14 päivän peruuttamisoikeudesta. *</label>
+          <label class="chk"><input type="checkbox" id="startEarly"> Pyydän, että nouto ja pesu aloitetaan jo peruuttamisaikana. Ymmärrän, että jos peruutan palvelun alettua, maksan suoritetusta osuudesta, ja että menetän peruuttamisoikeuden, kun palvelu on kokonaan suoritettu.</label>
+          <label class="chk"><input type="checkbox" id="marketingConsent"> Saa muistuttaa minua seuraavasta pesusta sähköpostilla/tekstiviestillä.</label>
+          <div class="submit-row"><button class="btn btn-g" id="go">Lähetä varaus</button><p id="msg" role="status" aria-live="polite"></p></div>
+        </fieldset>
+      </form>
+      <aside class="booking-aside" aria-label="Hyvä tietää">
+        <div class="card"><h3>Maksu vasta palautuksessa</h3><p>Et maksa mitään varausta tehdessäsi. Maksu suoritetaan, kun puhtaat matot tuodaan takaisin.</p></div>
+        <div class="card"><h3>14 päivän peruuttamisoikeus</h3><p>Peruutus ennen noutoa on maksuton. <a href="/peruutuslomake">Peruutuslomake</a></p></div>
+        <div class="card"><h3>Kysyttävää?</h3><p>Soita <a href="tel:+358404108581">040 41 08581</a> tai kirjoita <a href="mailto:mattorundi@gmail.com">mattorundi@gmail.com</a>.</p></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 5. MIKSI MATTORUNDI -->
+<section id="miksi">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>Miksi Mattorundi</p>
+    <h2 data-reveal>Puhtaat matot ilman kantamista</h2>
+    <p class="lead" data-reveal>Palvelu on tehty niille, joille mattojen vieminen pesulaan on hankalaa – tai jotka haluavat vain säästää aikaa.</p>
+    <div class="benefits">
+      <div class="card benefit" data-reveal-card>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg></div>
+        <h3>Nouto kotiovelta</h3><p>Haemme matot suoraan lattialta. Sinun ei tarvitse kantaa mitään eikä lähteä itsepalvelupesulaan.</p>
+      </div>
+      <div class="card benefit" data-reveal-card>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>
+        <h3>Hinta tiedossa etukäteen</h3><p>39 € tai 49 € mattoa kohden. Hinta sisältää noudon, pesun, kuivauksen ja palautuksen.</p>
+      </div>
+      <div class="card benefit" data-reveal-card>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></svg></div>
+        <h3>Materiaalin mukainen pesu</h3><p>Pesumenetelmä valitaan maton mukaan. Jos mattoa ei voi pestä turvallisesti, kerromme siitä eikä siitä veloiteta.</p>
+      </div>
+      <div class="card benefit" data-reveal-card>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Kiireisille perheille</h3><p>Paljon mattoja ja vähän aikaa? Valitse päivä kalenterista, muu hoituu.</p>
+      </div>
+      <div class="card benefit" data-reveal-card>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a8 8 0 0 1 16 0"/><path d="M8 14a4 4 0 0 1 8 0"/><path d="M2 18h20"/></svg></div>
+        <h3>Raikkaampi sisäilma</h3><p>Matot keräävät pölyä ja allergeeneja. Säännöllinen pesu pitää kodin raikkaampana.</p>
+      </div>
+      <div class="card benefit" data-reveal-card>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></div>
+        <h3>Yhteinen reitti</h3><p>Noudot keskitetään samalle reitille Tampereella, mikä säästää aikaa ja päästöjä.</p>
+      </div>
+    </div>
+    <div class="area" data-reveal>
+      <div><h3>Palvelualue: Tampere</h3><p>Etkö ole varma, kuuluuko osoitteesi alueelle? Soita tai lähetä sähköpostia, niin tarkistetaan.</p></div>
+      <a class="btn btn-n" href="tel:+358404108581">Soita 040 41 08581</a>
+    </div>
+  </div>
+</section>
+
+<!-- 6. UKK -->
+<section id="ukk" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>Usein kysyttyä</p>
+    <h2 data-reveal>Kysymyksiä ja vastauksia</h2>
+    <div class="faq" data-reveal>
+      <details><summary>Kauanko pesu kestää?</summary><div class="a"><p>Pesu ja kuivaus kestävät tavallisesti noin 3 päivää. Ruuhka-aikana palautus voi siirtyä myöhemmäksi. Kalenteri näyttää arvioidun palautuspäivän jo varausta tehdessä, ja palautusajasta sovitaan kanssasi erikseen.</p></div></details>
+      <details><summary>Milloin ja miten maksan?</summary><div class="a"><p>Maksu suoritetaan pääsääntöisesti mattojen palautuksen yhteydessä. Varausta tehdessä ei makseta mitään.</p></div></details>
+      <details><summary>Mitä jos mattoani ei voi pestä?</summary><div class="a"><p>Pesumenetelmä valitaan maton materiaalin mukaan, ja tarvittaessa tehdään värinpitävyystesti. Jos mattoa ei voi pestä turvallisesti, ilmoitamme siitä ennen pesua eikä siitä veloiteta.</p></div></details>
+      <details><summary>Entä isot tai erikoismatot?</summary><div class="a"><p>Yli 3,5 m² matoista ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen ennen tilausta. Soita <a href="tel:+358404108581">040 41 08581</a> tai kirjoita <a href="mailto:mattorundi@gmail.com">mattorundi@gmail.com</a>.</p></div></details>
+      <details><summary>Voinko peruuttaa tilauksen?</summary><div class="a"><p>Kyllä. Sinulla on 14 päivän peruuttamisoikeus, ja peruutus ennen noutoa on maksuton. Voit ilmoittaa peruutuksesta sähköpostilla, puhelimella tai <a href="/peruutuslomake">peruutuslomakkeella</a>.</p></div></details>
+      <details><summary>Millä alueella toimitte?</summary><div class="a"><p>Tampereella. Noudot keskitetään samalle reitille.</p></div></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- 7. FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="logo" href="/" aria-label="Mattorundi – etusivu"><b>MATTO</b>RUNDI</a>
+        <p>Me haemme. Me pesemme. Me palautamme.<br>Mattojen nouto, pesu ja palautus Tampereella.</p>
+      </div>
+      <div>
+        <h3>Yhteystiedot</h3>
+        <ul>
+          <li><a href="tel:+358404108581">040 41 08581</a></li>
+          <li><a href="mailto:mattorundi@gmail.com">mattorundi@gmail.com</a></li>
+          <li>Tampere</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Asiakkaalle</h3>
+        <ul>
+          <li><a href="#ehdot" data-open-terms>Tilausehdot</a></li>
+          <li><a href="/peruutuslomake">Peruutuslomake</a></li>
+          <li><a href="#varaa">Varaa nouto</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><b>Mattorundi</b> · Y-tunnus: [täydennetään] · TAMK Proakatemia / Valaja Team osk</span>
+    </div>
+  </div>
+</footer>
+
+<div class="mbar" data-mbar>
+  <a class="btn btn-g" href="#varaa">Varaa nouto</a>
+  <a class="btn btn-n" href="tel:+358404108581">Soita</a>
+</div>
+
 <script src="common.js"></script><script src="terms.js"></script><script src="booking.js"></script>
-<script>initBooking('verkko')</script></body></html>
+<script>initBooking('verkko');
+/* Noutopäivät, jos ylläpito on rajannut ne (esim. hallin vuokrakausi) */
+api('/api/public-settings').then(function (s) {
+  var d = s.pickupDates || []; if (!d.length) return;
+  var f = function (x) { return new Date(x + 'T00:00:00').toLocaleDateString('fi-FI', { weekday: 'short', day: 'numeric', month: 'numeric' }); };
+  var list = d.map(f); var txt = list.length > 1 ? list.slice(0, -1).join(', ') + ' ja ' + list[list.length - 1] : list[0];
+  document.getElementById('pickupPill').textContent = 'Seuraavat noutopäivät: ' + txt;
+  var n = document.getElementById('pickupNote'); n.querySelector('span').innerHTML = '<b>Noutopäivät tällä kierroksella: ' + txt + '.</b> Muille päiville voi kysyä puhelimitse.'; n.hidden = false;
+}).catch(function () {});
+/* Teemavalitsin vertailuun: lisää osoitteen perään ?teemat */
+if (new URLSearchParams(location.search).has('teemat')) {
+  var T = [['metsa', 'Metsä & lime', '#0F3B2C', '#B5CD34'], ['petrooli', 'Petrooli & terrakotta', '#1F4E45', '#B04E24'], ['savi', 'Savi & sahrami', '#58331F', '#E8B04A']];
+  var p = document.createElement('div'); p.className = 'theme-picker'; p.setAttribute('role', 'group'); p.setAttribute('aria-label', 'Värivaihtoehto');
+  p.innerHTML = '<span>Värit:</span>' + T.map(function (t) { return '<button type="button" data-t="' + t[0] + '"><i style="background:linear-gradient(135deg,' + t[2] + ' 50%,' + t[3] + ' 50%)"></i>' + t[1] + '</button>'; }).join('');
+  document.body.appendChild(p);
+  var sync = function () { var cur = document.documentElement.getAttribute('data-theme'); p.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.t === cur); }); };
+  p.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; document.documentElement.setAttribute('data-theme', b.dataset.t); try { localStorage.setItem('mr-teema', b.dataset.t); } catch (er) {} sync(); });
+  sync();
+}
+</script>
+</body>
+</html>

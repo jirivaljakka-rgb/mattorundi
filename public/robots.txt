@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /sopimus
+Disallow: /admin
+Disallow: /vahvistus
+Disallow: /paperisopimus
+Disallow: /api/

@@ -1,37 +1,131 @@
-<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ylläpito – Mattorundi</title><link rel="stylesheet" href="styles.css"></head><body>
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Ylläpito – Mattorundi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+.admin-nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 28px}
+.admin-nav a{padding:9px 16px;border-radius:999px;background:var(--color-surface);border:1px solid var(--color-border);text-decoration:none;font-weight:700;font-size:15px;color:var(--color-text);min-height:44px;display:inline-flex;align-items:center}
+.admin-nav a:hover{background:var(--color-surface-2)}
+.admin h2{margin-top:48px;font-size:clamp(26px,3vw,36px)}
+.admin h2:first-of-type{margin-top:0}
+.admin table input{min-height:42px;padding:8px 10px;font-size:15px}
+.admin table input[type=checkbox]{width:22px;height:22px;min-height:0}
+.admin td.num,.admin th.num{text-align:right;white-space:nowrap}
+.admin tfoot td{font-weight:800;background:var(--color-surface-2)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:0 0 14px}
+.tools label{margin:0 0 4px}
+.tools input,.tools select{width:auto;min-width:160px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--color-success-bg);color:var(--color-primary);border:1px solid var(--color-success-border);border-radius:999px;padding:6px 8px 6px 14px;font-weight:700}
+.chip button{width:30px;height:30px;border-radius:50%;border:0;background:var(--color-surface);cursor:pointer;font-size:18px;line-height:1;color:var(--color-text)}
+.note{background:var(--color-surface-2);border-radius:12px;padding:12px 16px;font-size:15px;color:var(--color-text-muted)}
+.btn-x{background:transparent;border:1.5px solid var(--color-border);border-radius:10px;min-height:42px;padding:0 12px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
 <header class="top"><div class="wrap"><a class="logo" href="/"><b>MATTO</b>RUNDI</a><nav><a class="btn btn-g btn-s" href="/sopimus">Myyjä: kirjaa sopimus</a></nav></div></header>
-<section><div class="wrap">
-<div id="login" class="card" style="max-width:360px"><h2>Ylläpito</h2><label>PIN</label><input id="pin" type="password"><p><button class="btn btn-g" onclick="login()">Kirjaudu</button></p><p id="lmsg"></p></div>
+<main><section><div class="wrap admin">
+<div id="login" class="card" style="max-width:380px"><h2>Ylläpito</h2><label for="pin">PIN</label><input id="pin" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"><p><button class="btn btn-g" onclick="login()">Kirjaudu</button></p><p id="lmsg"></p></div>
 <div id="app" style="display:none">
-<h2>Kapasiteetti – seuraavat 4 viikkoa</h2>
+<nav class="admin-nav" aria-label="Ylläpidon osiot"><a href="#provisiot">Myyjät ja provisiot</a><a href="#noutopaivat">Noutopäivät</a><a href="#kapasiteetti">Kapasiteetti</a><a href="#tilaukset">Tilaukset</a><a href="#asetukset">Asetukset</a></nav>
+
+<!-- MYYJÄT JA PROVISIOT -->
+<h2 id="provisiot">Myyjät ja provisiot</h2>
+<p class="lead" style="font-size:16px;margin-bottom:18px">Jokainen myyjä kirjaa kaupat omalla koodillaan sivulla <a href="/sopimus">/sopimus</a>. Provisio lasketaan kaupan hetkellä: <b>% kokonaishinnasta</b> ja/tai <b>€ per matto</b>. Perutut tilaukset eivät kerrytä provisiota.</p>
+<div class="card" style="overflow:auto">
+  <div class="tools">
+    <div><label for="rfrom">Alkaen</label><input id="rfrom" type="date"></div>
+    <div><label for="rto">Päättyen</label><input id="rto" type="date"></div>
+    <button class="btn btn-n btn-s" onclick="report()">Näytä</button>
+    <button class="btn btn-o btn-s" onclick="reportCsv()">Lataa CSV</button>
+  </div>
+  <table id="rt"></table>
+</div>
+
+<h3 style="margin-top:28px">Myyjärekisteri</h3>
+<form id="sellersForm" class="card" style="overflow:auto">
+  <table id="selt"></table>
+  <p style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0"><button type="button" class="btn btn-o btn-s" onclick="addSeller()">+ Lisää myyjä</button><button class="btn btn-g btn-s">Tallenna myyjät</button></p>
+  <p id="selmsg"></p>
+  <p class="note">Koodi: kirjaimia ja numeroita, esim. ROOPE tai M07. Pois päältä oleva myyjä ei voi kirjata uusia kauppoja, mutta hänen vanhat kauppansa näkyvät raportissa.</p>
+</form>
+
+<!-- NOUTOPÄIVÄT -->
+<h2 id="noutopaivat">Noutopäivät</h2>
+<div class="card" style="max-width:760px">
+  <p style="margin-top:0">Kun listalla on päiviä, asiakkaat ja myyjät voivat valita <b>vain nämä päivät</b> (myös lauantai tai sunnuntai käy). Kun lista on tyhjä, noutoja voi varata kaikille työpäiville.</p>
+  <div class="chips" id="pdChips"></div>
+  <div class="tools"><div><label for="pdNew">Lisää noutopäivä</label><input id="pdNew" type="date"></div><button type="button" class="btn btn-o btn-s" onclick="addPd()">Lisää</button></div>
+  <p style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-g btn-s" onclick="savePd()">Tallenna noutopäivät</button><button type="button" class="btn btn-o btn-s" onclick="PD=[];drawPd()">Tyhjennä (kaikki työpäivät auki)</button></p>
+  <p id="pdmsg"></p>
+  <p class="note">Vinkki: jos pesette matot hallissa viikonloppuna, lisää myös la ja su työpäiviksi Asetuksissa. Silloin arvioitu palautuspäivä lasketaan oikein.</p>
+</div>
+
+<!-- KAPASITEETTI -->
+<h2 id="kapasiteetti">Kapasiteetti – seuraavat 4 viikkoa</h2>
 <p class="lead" style="font-size:15px">Miten laskenta toimii: matot pestään saapumisjärjestyksessä. Joka työpäivä pestään <b id="e1"></b> mattoa (pesu alkaa noutoa seuraavana työpäivänä), ja pesty matto kuivuu, kunnes noudosta on kulunut vähintään <b id="e2"></b> päivää. Kun jonossa on paljon mattoja, palautus siirtyy myöhemmäksi. Noutopäivä suljetaan, jos päivän noutokiintiö (<b id="e3"></b>) ylittyisi tai varastossa olisi jonain päivänä yli <b id="e4"></b> mattoa.</p>
 <div class="card" style="overflow:auto"><table id="capt"></table></div>
-<h2 style="margin-top:40px">Tilaukset</h2><p><a href="/paperisopimus" target="_blank">Tulosta paperisopimuspohja</a> · <a href="#" onclick="exp();return false">Lataa kaikki tiedot (JSON-varmuuskopio)</a></p>
+
+<!-- TILAUKSET -->
+<h2 id="tilaukset">Tilaukset</h2>
+<p><a href="/paperisopimus" target="_blank">Tulosta paperisopimuspohja</a> · <a href="#" onclick="exp();return false">Lataa kaikki tiedot (JSON-varmuuskopio)</a></p>
+<div class="tools"><div><label for="ofilter">Näytä myyjä</label><select id="ofilter" onchange="drawOrders()"><option value="">Kaikki tilaukset</option><option value="__verkko">Vain verkkovaraukset</option></select></div></div>
 <div class="card" style="overflow:auto;padding:0"><table id="ot"></table></div>
-<h2 style="margin-top:40px">Asetukset</h2>
+
+<!-- ASETUKSET -->
+<h2 id="asetukset">Asetukset</h2>
 <form id="sf" class="card" style="max-width:760px">
-<div class="row"><div><label>Noutoja enintään / päivä (mattoa)</label><input name="maxPickupPerDay" type="number"></div><div><label>Varaston kokonaiskapasiteetti (mattoa)</label><input name="storageCapacity" type="number"></div></div>
-<div class="row"><div><label>Pesu + kuivaus vähintään (päivää)</label><input name="turnaroundDays" type="number"></div><div><label>Pesukapasiteetti / työpäivä (mattoa) <small id="wk"></small></label><input name="washPerDay" type="number" step="0.5"></div></div>
+<div class="row"><div><label for="s1">Noutoja enintään / päivä (mattoa)</label><input id="s1" name="maxPickupPerDay" type="number"></div><div><label for="s2">Varaston kokonaiskapasiteetti (mattoa)</label><input id="s2" name="storageCapacity" type="number"></div></div>
+<div class="row"><div><label for="s3">Pesu + kuivaus vähintään (päivää)</label><input id="s3" name="turnaroundDays" type="number"></div><div><label for="s4">Pesukapasiteetti / työpäivä (mattoa) <small id="wk"></small></label><input id="s4" name="washPerDay" type="number" step="0.5"></div></div>
 <label>Työpäivät</label><div id="wd" style="display:flex;gap:14px;flex-wrap:wrap"></div>
-<div class="row3"><div><label>Hinta keskikok. €</label><input name="priceMedium" type="number" step="0.01"></div><div><label>Hinta iso €</label><input name="priceLarge" type="number" step="0.01"></div><div><label>ALV %</label><input name="vatPct" type="number" step="0.1"></div></div>
-<label>Myyjäkoodit (pilkulla erotettuna)</label><input name="sellerCodes">
+<div class="row3"><div><label for="s5">Hinta keskikok. €</label><input id="s5" name="priceMedium" type="number" step="0.01"></div><div><label for="s6">Hinta iso €</label><input id="s6" name="priceLarge" type="number" step="0.01"></div><div><label for="s7">ALV %</label><input id="s7" name="vatPct" type="number" step="0.1"></div></div>
 <p id="smsg"></p><button class="btn btn-g">Tallenna asetukset</button></form>
 <div class="card" style="margin-top:30px;max-width:760px"><h3>Google Kalenteri (tulossa)</h3><p>Synkronointi on suunniteltu lisättäväksi myöhemmin: jokaisesta tilauksesta luodaan nouto- ja palautustapahtuma yhteiseen kalenteriin (Google Calendar API, palvelutili). Tilaukset sisältävät jo kaikki tarvittavat kentät (päivä, aika, osoite, mattomäärä).</p></div>
-</div></div></section>
+</div></div></section></main>
 <script src="common.js"></script><script>
 let PIN=new URLSearchParams(location.search).get('pin')||sessionStorage.pin||'';const H=()=>({headers:{'x-admin-pin':PIN}});const DN=['ma','ti','ke','to','pe','la','su'];
-async function login(){PIN=$('#pin').value||PIN;try{await load();sessionStorage.pin=PIN;$('#login').style.display='none';$('#app').style.display=''}catch(e){$('#lmsg').innerHTML='<span class="err">'+e.message+'</span>'}}
-async function load(){const c=await api('/api/admin/capacity',H());const s=c.settings;
-$('#e1').textContent=s.washPerDay;$('#e2').textContent=s.turnaroundDays;$('#e3').textContent=s.maxPickupPerDay;$('#e4').textContent=s.storageCapacity;
-$('#capt').innerHTML='<tr><th>Päivä</th><th>Noudot</th><th>Palautukset</th><th>Varastossa</th><th style="width:40%">Varaston täyttö</th></tr>'+c.days.map(d=>{const p=Math.min(100,Math.round(d.storage/s.storageCapacity*100));return`<tr style="${d.work?'':'color:#9aa5ae'}"><td>${fmtD(d.date)}</td><td>${d.pickups}/${d.work?s.maxPickupPerDay:'–'}</td><td>${d.returns}</td><td>${d.storage}</td><td><div class="bar"><i class="${p>85?'hot':''}" style="width:${p}%"></i></div></td></tr>`}).join('');
-const o=await api('/api/admin/orders',H());o.sort((a,b)=>a.pickupDate.localeCompare(b.pickupDate));
-$('#ot').innerHTML='<tr><th>Nro</th><th>Asiakas</th><th>Matot</th><th>Summa</th><th>Nouto</th><th>Palautus (arvio)</th><th>Maksu</th><th>Kanava</th><th>Tila</th></tr>'+o.map(x=>`<tr><td><a href="/vahvistus?id=${x.id}" target="_blank">${x.number}</a></td><td>${x.name}<br><small>${x.address}, ${x.city}<br>${x.phone}</small></td><td>${x.medium} keski + ${x.large} iso</td><td>${eur(x.total)}</td><td>${fmtD(x.pickupDate)} ${x.pickupTime||''}</td><td>${x.status==='peruttu'?'–':fmtD(x.returnDate)}</td><td>${x.payment}</td><td>${x.channel}${x.sellerCode?' / '+x.sellerCode:''}${x.hasPhoto?`<br><a href="/api/admin/photo/${x.id}?pin=${encodeURIComponent(PIN)}" target="_blank"><img src="/api/admin/photo/${x.id}?pin=${encodeURIComponent(PIN)}" style="width:70px;border-radius:6px;margin-top:4px" alt="sopimuskuva"></a>`:''}</td><td><select onchange="st('${x.id}',this.value)">${['vahvistettu','noudettu','pesussa','palautettu','peruttu'].map(v=>`<option ${v===x.status?'selected':''}>${v}</option>`).join('')}</select></td></tr>`).join('')||'<tr><td colspan=9>Ei tilauksia.</td></tr>';
-const f=$('#sf');for(const k of ['maxPickupPerDay','storageCapacity','turnaroundDays','washPerDay','priceMedium','priceLarge','vatPct'])f[k].value=s[k];f.sellerCodes.value=s.sellerCodes.join(', ');
-$('#wd').innerHTML=DN.map((n,i)=>`<label class="chk"><input type="checkbox" value="${i+1}" ${s.workDays.includes(i+1)?'checked':''}> ${n}</label>`).join('');
-$('#wk').textContent='≈ '+(s.washPerDay*s.workDays.length)+' / viikko';}
+let S=null,ORDERS=[],SELLERS=[],PD=[],REPORT=null;
+// Asiakkaiden syöttämä teksti escapetaan aina ennen näyttämistä
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=d=>d.toLocaleDateString('sv-SE');
+async function login(){PIN=$('#pin').value||PIN;try{await load();sessionStorage.pin=PIN;$('#login').style.display='none';$('#app').style.display=''}catch(e){$('#lmsg').innerHTML='<span class="err">'+esc(e.message)+'</span>'}}
+async function load(){const c=await api('/api/admin/capacity',H());S=c.settings;
+$('#e1').textContent=S.washPerDay;$('#e2').textContent=S.turnaroundDays;$('#e3').textContent=S.maxPickupPerDay;$('#e4').textContent=S.storageCapacity;
+$('#capt').innerHTML='<tr><th>Päivä</th><th>Noudot</th><th>Palautukset</th><th>Varastossa</th><th style="width:40%">Varaston täyttö</th></tr>'+c.days.map(d=>{const p=Math.min(100,Math.round(d.storage/S.storageCapacity*100));return`<tr style="${d.work?'':'color:#8b8f86'}"><td>${fmtD(d.date)}</td><td>${d.pickups}/${d.work?S.maxPickupPerDay:'–'}</td><td>${d.returns}</td><td>${d.storage}</td><td><div class="bar"><i class="${p>85?'hot':''}" style="width:${p}%"></i></div></td></tr>`}).join('');
+ORDERS=await api('/api/admin/orders',H());ORDERS.sort((a,b)=>a.pickupDate.localeCompare(b.pickupDate));
+SELLERS=S.sellers.map(x=>({...x}));PD=[...S.pickupDates];
+const of=$('#ofilter'),cur=of.value;of.innerHTML='<option value="">Kaikki tilaukset</option><option value="__verkko">Vain verkkovaraukset</option>'+SELLERS.map(x=>`<option value="${esc(x.code)}">${esc(x.name)} (${esc(x.code)})</option>`).join('');of.value=cur;
+drawOrders();drawSellers();drawPd();
+const f=$('#sf');for(const k of ['maxPickupPerDay','storageCapacity','turnaroundDays','washPerDay','priceMedium','priceLarge','vatPct'])f[k].value=S[k];
+$('#wd').innerHTML=DN.map((n,i)=>`<label class="chk"><input type="checkbox" value="${i+1}" ${S.workDays.includes(i+1)?'checked':''}> ${n}</label>`).join('');
+$('#wk').textContent='≈ '+(S.washPerDay*S.workDays.length)+' / viikko';
+if(!$('#rfrom').value){const n=new Date();$('#rfrom').value=iso(new Date(n.getFullYear(),n.getMonth(),1));$('#rto').value=iso(new Date(n.getFullYear(),n.getMonth()+1,0))}
+await report();}
+function drawOrders(){const fv=$('#ofilter').value;const list=ORDERS.filter(x=>!fv||(fv==='__verkko'?x.channel==='verkko':x.sellerCode===fv));
+$('#ot').innerHTML='<tr><th>Nro</th><th>Asiakas</th><th>Matot</th><th class="num">Summa</th><th>Nouto</th><th>Palautus (arvio)</th><th>Maksu</th><th>Myyjä</th><th class="num">Provisio</th><th>Tila</th></tr>'+list.map(x=>`<tr><td><a href="/vahvistus?id=${esc(x.id)}" target="_blank">${esc(x.number)}</a></td><td>${esc(x.name)}<br><small>${esc(x.address)}, ${esc(x.city)}<br>${esc(x.phone)}</small></td><td>${x.medium} keski + ${x.large} iso</td><td class="num">${eur(x.total)}</td><td>${fmtD(x.pickupDate)} ${esc(x.pickupTime||'')}</td><td>${x.status==='peruttu'?'–':fmtD(x.returnDate)}</td><td>${esc(x.payment)}</td><td>${x.channel==='kotimyynti'?esc(x.sellerName||x.sellerCode)+'<br><small>'+esc(x.sellerCode)+'</small>':'<small>verkkovaraus</small>'}${x.hasPhoto?`<br><a href="/api/admin/photo/${esc(x.id)}?pin=${encodeURIComponent(PIN)}" target="_blank"><img src="/api/admin/photo/${esc(x.id)}?pin=${encodeURIComponent(PIN)}" style="width:70px;border-radius:6px;margin-top:4px" alt="sopimuskuva"></a>`:''}</td><td class="num">${x.channel==='kotimyynti'&&x.status!=='peruttu'?eur(x.commission||0):'–'}</td><td><select onchange="st('${esc(x.id)}',this.value)" aria-label="Tilauksen tila">${['vahvistettu','noudettu','pesussa','palautettu','peruttu'].map(v=>`<option ${v===x.status?'selected':''}>${v}</option>`).join('')}</select></td></tr>`).join('')||'<tr><td colspan=10>Ei tilauksia.</td></tr>';}
+function drawSellers(){$('#selt').innerHTML='<tr><th>Koodi</th><th>Nimi</th><th class="num">Provisio %</th><th class="num">€ / matto</th><th>Käytössä</th><th></th></tr>'+(SELLERS.map((x,i)=>`<tr><td><input aria-label="Koodi" value="${esc(x.code)}" oninput="SELLERS[${i}].code=this.value.toUpperCase()" style="text-transform:uppercase;min-width:110px"></td><td><input aria-label="Nimi" value="${esc(x.name)}" oninput="SELLERS[${i}].name=this.value" style="min-width:160px"></td><td><input aria-label="Provisio prosentteina" type="number" min="0" step="0.5" value="${x.commissionPct}" oninput="SELLERS[${i}].commissionPct=+this.value" style="width:90px"></td><td><input aria-label="Provisio euroa per matto" type="number" min="0" step="0.5" value="${x.commissionPerCarpet}" oninput="SELLERS[${i}].commissionPerCarpet=+this.value" style="width:90px"></td><td><input type="checkbox" aria-label="Myyjä käytössä" ${x.active?'checked':''} onchange="SELLERS[${i}].active=this.checked"></td><td><button type="button" class="btn-x" onclick="SELLERS.splice(${i},1);drawSellers()" aria-label="Poista myyjä">Poista</button></td></tr>`).join('')||'<tr><td colspan=6>Ei myyjiä. Lisää ensimmäinen myyjä.</td></tr>');}
+function addSeller(){SELLERS.push({code:'',name:'',commissionPct:0,commissionPerCarpet:0,active:true});drawSellers();const ins=$('#selt').querySelectorAll('tr:last-child input');if(ins[0])ins[0].focus()}
+$('#sellersForm').onsubmit=async e=>{e.preventDefault();const codes=SELLERS.map(x=>x.code.trim()).filter(Boolean);if(new Set(codes).size!==codes.length){$('#selmsg').innerHTML='<span class="err">Sama koodi on kahdella myyjällä.</span>';return}
+try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify({sellers:SELLERS}),...H()});$('#selmsg').innerHTML='<span class="ok">Myyjät tallennettu.</span>';load()}catch(err){$('#selmsg').innerHTML='<span class="err">'+esc(err.message)+'</span>'}};
+function drawPd(){$('#pdChips').innerHTML=PD.length?PD.map((d,i)=>`<span class="chip">${fmtD(d)}<button type="button" onclick="PD.splice(${i},1);drawPd()" aria-label="Poista ${fmtD(d)}">×</button></span>`).join(''):'<span class="note">Ei rajattuja päiviä – kaikki työpäivät ovat varattavissa.</span>'}
+function addPd(){const v=$('#pdNew').value;if(v&&!PD.includes(v)){PD.push(v);PD.sort();drawPd()}$('#pdNew').value=''}
+async function savePd(){try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify({pickupDates:PD}),...H()});$('#pdmsg').innerHTML='<span class="ok">Noutopäivät tallennettu.</span>';load()}catch(err){$('#pdmsg').innerHTML='<span class="err">'+esc(err.message)+'</span>'}}
+async function report(){REPORT=await api(`/api/admin/commissions?from=${$('#rfrom').value}&to=${$('#rto').value}`,H());const r=REPORT.sellers;const t=r.reduce((a,x)=>({orders:a.orders+x.orders,carpets:a.carpets+x.carpets,sales:a.sales+x.sales,commission:a.commission+x.commission}),{orders:0,carpets:0,sales:0,commission:0});
+$('#rt').innerHTML='<thead><tr><th>Myyjä</th><th>Koodi</th><th class="num">Kaupat</th><th class="num">Matot</th><th class="num">Myynti</th><th class="num">Provisio</th></tr></thead><tbody>'+(r.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.code)}</td><td class="num">${x.orders}</td><td class="num">${x.carpets}</td><td class="num">${eur(x.sales)}</td><td class="num"><b>${eur(x.commission)}</b></td></tr>`).join('')||'<tr><td colspan=6>Ei myyjien kauppoja valitulla aikavälillä.</td></tr>')+'</tbody>'+(r.length?`<tfoot><tr><td colspan=2>Yhteensä</td><td class="num">${t.orders}</td><td class="num">${t.carpets}</td><td class="num">${eur(t.sales)}</td><td class="num">${eur(t.commission)}</td></tr></tfoot>`:'');}
+function reportCsv(){if(!REPORT)return;const rows=[['Myyjä','Koodi','Kaupat','Matot','Myynti €','Provisio €'],...REPORT.sellers.map(x=>[x.name,x.code,x.orders,x.carpets,String(x.sales).replace('.',','),String(x.commission).replace('.',',')])];
+const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`provisiot_${REPORT.from}_${REPORT.to}.csv`;a.click()}
 async function st(id,v){await api('/api/admin/orders/'+id,{method:'PATCH',body:JSON.stringify({status:v}),...H()});load()}
 function exp(){fetch('/api/admin/export',H()).then(r=>r.blob()).then(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mattorundi.json';a.click()})}
 $('#sf').onsubmit=async e=>{e.preventDefault();const f=e.target;const b={};for(const k of ['maxPickupPerDay','storageCapacity','turnaroundDays','washPerDay','priceMedium','priceLarge','vatPct'])b[k]=+f[k].value;
-b.workDays=[...document.querySelectorAll('#wd input:checked')].map(x=>+x.value);b.sellerCodes=f.sellerCodes.value.split(',');
-try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(b),...H()});$('#smsg').innerHTML='<span class="ok">Tallennettu.</span>';load()}catch(err){$('#smsg').innerHTML='<span class="err">'+err.message+'</span>'}};
-if(PIN)login();</script></body></html>
+b.workDays=[...document.querySelectorAll('#wd input:checked')].map(x=>+x.value);
+try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(b),...H()});$('#smsg').innerHTML='<span class="ok">Tallennettu.</span>';load()}catch(err){$('#smsg').innerHTML='<span class="err">'+esc(err.message)+'</span>'}};
+if(PIN)login();</script>
+</body>
+</html>
