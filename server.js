@@ -33,6 +33,18 @@ function load() { try { const db = JSON.parse(fs.readFileSync(DATA)); db.setting
   for (const d of DEFAULT_SELLERS) if (!db.settings.sellers.some(x => x.code === d.code)) db.settings.sellers.push({ ...d });
   db.settings.sellerCodes = db.settings.sellers.filter(x => x.active).map(x => x.code); return db; } catch { return { settings: normalize({ ...DEFAULTS, sellers: DEFAULT_SELLERS.map(x => ({ ...x })) }), orders: [] }; } }
 const findSeller = code => db.settings.sellers.find(x => x.active && x.code === String(code || '').trim().toUpperCase());
+// Google Sheets -kirjaus (kestävä tallennus). Fire-and-forget: virhe ei koskaan estä tilausta.
+function toSheets(o) {
+  const url = process.env.SHEETS_WEBHOOK_URL; if (!url || typeof fetch !== 'function') return;
+  let ret = null; try { ret = cap.simulate(db.orders, db.settings).returns[o.id] || null; } catch {}
+  const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === String(o.sellerCode).toUpperCase()) : null;
+  const order = { number: o.number, createdAt: o.createdAt, channel: o.channel, sellerCode: o.sellerCode || '', sellerName: o.sellerName || (sl && sl.name) || '',
+    name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city, pickupDate: o.pickupDate, pickupTime: o.pickupTime,
+    large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: ret || o.estReturnAtBooking || '', notes: o.notes, status: o.status, payment: o.payment };
+  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: process.env.SHEETS_SECRET || '', order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
+    .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
+    .catch(e => console.error('Sheets-virhe', o.number, e.message));
+}
 function save(db) { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(db, null, 2)); fs.renameSync(DATA + '.tmp', DATA); }
 let db = load();
 const today = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Helsinki' });
@@ -80,7 +92,7 @@ http.createServer(async (req, res) => {
         commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) : 0,
         signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: 'LUONNOS-2026-11', estReturnAtBooking: c.returnDate };
       if (o.hasPhoto) { const mm = String(b.photo).match(/^data:image\/(\w+);base64,(.*)$/); const dir = path.join(path.dirname(DATA), 'photos'); fs.mkdirSync(dir, { recursive: true }); o.photoFile = o.id + '.' + (mm[1] === 'jpeg' ? 'jpg' : mm[1]); fs.writeFileSync(path.join(dir, o.photoFile), Buffer.from(mm[2], 'base64')); }
-      db.orders.push(o); save(db);
+      db.orders.push(o); save(db); toSheets(o);
       return send(res, 201, { id: o.id });
     }
     let m;
@@ -137,7 +149,7 @@ http.createServer(async (req, res) => {
         const b = await body(req); const o = db.orders.find(x => x.id === m[1]); if (!o) return send(res, 404, {});
         if (['vahvistettu','noudettu','pesussa','palautettu','peruttu'].includes(b.status)) o.status = b.status;
         if (b.paid !== undefined) o.payment = b.paid ? 'maksettu' : o.payment;
-        save(db); return send(res, 200, o);
+        save(db); toSheets(o); return send(res, 200, o);
       }
       if (p === '/api/admin/export') { res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': 'attachment; filename=mattorundi.json' }); return res.end(JSON.stringify(db, null, 2)); }
     }
