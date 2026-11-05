@@ -22,7 +22,7 @@ const pr2 = cap.commission(2 * 49 + 39, 3, m1, { large: 2, medium: 1 });
 console.log('Provisio MYYJA1669 2 isoa + 1 keski:', pr2);
 if (pr2 !== 56) { console.error('VIRHE: iso/keski-provisio'); process.exit(1); }
 // Lisäpalvelut: karvanpoisto 10 € / matto (0..matot), hajunpoisto 10 € kerran (kaikki matot). Myyjälle +2 € / yksikkö.
-const { buildCustomerEmail, clampExtras, resolveAgreedReturn } = require('./confirmation');
+const { buildCustomerEmail, clampExtras, resolveAgreedReturn, assertOutgoingEmail } = require('./confirmation');
 function orderTotal(med, lg, hair, odor, pm, pl) {
   return med * pm + lg * pl + clampExtras(med, lg, hair, odor).extrasSum;
 }
@@ -71,14 +71,19 @@ const sample = {
   returnDate: '2026-11-16', commission: 99, sellerCode: 'JANI669', sellerName: 'Jani', signature: null, termsVersion: '2026-11'
 };
 const mail = buildCustomerEmail(sample);
+if (typeof mail.body !== 'string' || mail.body.trim().length < 80) { console.error('VIRHE: body liian lyhyt', mail.body && mail.body.length); process.exit(1); }
+if (!/kiitos/i.test(mail.body) || !mail.body.includes('PDF')) { console.error('VIRHE: body ilman kiitos/PDF'); process.exit(1); }
+if (!mail.body.includes('Sopimus: 5.11.2026 klo 10.15') || !mail.body.includes('Olet tehnyt tämän tilauksen 5.11.2026 klo 10.15')) { console.error('VIRHE: sopimuspäivä/kellonaika puuttuu', mail.body); process.exit(1); }
 if (/https?:\/\/|\/vahvistus|onrender\.com/i.test(mail.body) || /https?:\/\/|\/vahvistus|onrender\.com/i.test(mail.htmlBody || '')) { console.error('VIRHE: sähköpostissa on URL'); process.exit(1); }
-for (const bit of ['kiitos, että valitsit', 'PDF', '11.11.2026', '16.11.2026', '108,00 €', 'Maija <Test>', 'Arvioitu palautus']) {
+for (const bit of ['kiitos, että valitsit', 'PDF', 'Tilausvahvistus ja ehdot', '11.11.2026 9–11', '16.11.2026', '108,00 €', 'Maija <Test>', 'Arvioitu palautus', 'Nouto:', 'Summa:']) {
   if (!mail.body.includes(bit)) { console.error('VIRHE: tekstistä puuttuu', bit); process.exit(1); }
 }
-if (!mail.htmlBody || /<img/i.test(mail.htmlBody)) { console.error('VIRHE: htmlBody puuttuu tai sisältää kuvan'); process.exit(1); }
-for (const bit of ['kiitos, että valitsit', 'PDF', 'Nouto', 'Arvioitu palautus', 'Summa', '11.11.2026', '16.11.2026', '108,00 €', 'Maija &lt;Test&gt;', 'Ystävällisin terveisin']) {
+if (!mail.htmlBody || mail.htmlBody.trim().length < 80 || /<img/i.test(mail.htmlBody)) { console.error('VIRHE: htmlBody puuttuu, on tyhjä tai sisältää kuvan'); process.exit(1); }
+for (const bit of ['kiitos, että valitsit', 'PDF', 'Tilausvahvistus ja ehdot', 'Sopimus', '5.11.2026 klo 10.15', 'Nouto', 'Arvioitu palautus', 'Summa', '11.11.2026', '16.11.2026', '108,00 €', 'Maija &lt;Test&gt;', 'Ystävällisin terveisin']) {
   if (!mail.htmlBody.includes(bit)) { console.error('VIRHE: htmlBody:sta puuttuu', bit); process.exit(1); }
 }
+try { assertOutgoingEmail('', mail.htmlBody); console.error('VIRHE: tyhjä body meni läpi'); process.exit(1); } catch (e) { if (!/tyhj/i.test(e.message)) { console.error('VIRHE: tyhjän bodyn virhe', e.message); process.exit(1); } }
+try { assertOutgoingEmail('   ', '   '); console.error('VIRHE: whitespace-body meni läpi'); process.exit(1); } catch (e) { if (!/tyhj/i.test(e.message)) { console.error('VIRHE: whitespace-virhe', e.message); process.exit(1); } }
 if (mail.body.includes('koko tilaus') || mail.htmlBody.includes('koko tilaus') || mail.pdfHtml.includes('koko tilaus')) { console.error('VIRHE: vanha "koko tilaus" -teksti'); process.exit(1); }
 if (mail.pdfFilename !== 'Mattorundi-tilausvahvistus-MR-2026-0007.pdf') { console.error('VIRHE: pdf-tiedostonimi', mail.pdfFilename); process.exit(1); }
 for (const bit of ['Valaja Team Osk', '3529504-8', 'Kuntokatu 3 C', 'mattorundi@gmail.com', '040 41 08581', 'Maija &lt;Test&gt;', 'Testikatu 1', '11.11.2026', '16.11.2026', 'Keskikokoinen matto', 'Iso matto', 'Karvanpoisto', '108,00 €', 'ALV', 'palautuksen yhteydessä', 'Peruuttamisoikeus', 'Tilausehdot', 'Peruutuslomake', 'Ovikoodi 1234 &amp; raput']) {
@@ -118,11 +123,13 @@ function freePort() {
   const hookPort = await freePort();
   const appPort = await freePort();
   const posts = [];
+  const rawPosts = [];
   const hook = http.createServer((req, res) => {
     if (req.method === 'POST' && req.url === '/hook') {
       let b = '';
       req.on('data', c => { b += c; });
       req.on('end', () => {
+        rawPosts.push(b);
         let json = {};
         try { json = JSON.parse(b); } catch { json = { parseError: true }; }
         posts.push(json);
@@ -178,6 +185,16 @@ function freePort() {
     const keys = Object.keys(sent).sort().join(',');
     if (keys !== 'action,body,htmlBody,order,pdfFilename,pdfHtml,secret,subject,to') throw new Error('email-kentät: ' + keys);
     if (sent.secret !== 'test-secret' || sent.to !== 'maija@example.com') throw new Error('email osoite/secret');
+    if (typeof sent.body !== 'string' || sent.body.trim().length < 80) throw new Error('body tyhjä tai liian lyhyt: ' + (sent.body && sent.body.length));
+    if (!/kiitos/i.test(sent.body) || !sent.body.includes('PDF')) throw new Error('body ilman kiitos/PDF');
+    if (!/Sopimus: \d{1,2}\.\d{1,2}\.\d{4} klo \d{2}\.\d{2}/.test(sent.body) || !sent.body.includes('Olet tehnyt tämän tilauksen') || !sent.body.includes('9–11') || !sent.body.includes('15.11.2026') || !/ehdot/i.test(sent.body)) throw new Error('email teksti puutteellinen: ' + sent.body);
+    if (typeof sent.htmlBody !== 'string' || sent.htmlBody.trim().length < 80 || !/kiitos/i.test(sent.htmlBody) || !sent.htmlBody.includes('PDF') || !sent.htmlBody.includes('Sopimus')) throw new Error('htmlBody tyhjä tai puutteellinen');
+    const raw = rawPosts.find(s => s.includes('"action":"email"'));
+    if (!raw) throw new Error('raaka email-payload puuttuu');
+    const iBody = raw.indexOf('"body":');
+    const iHtml = raw.indexOf('"htmlBody":');
+    const iPdf = raw.indexOf('"pdfHtml":');
+    if (iBody < 0 || iHtml < iBody || iPdf < iHtml) throw new Error('payload-järjestys body/htmlBody/pdfHtml ' + [iBody, iHtml, iPdf].join(','));
     if (/https?:\/\/|\/vahvistus/i.test(sent.body) || /https?:\/\/|\/vahvistus/i.test(sent.htmlBody || '')) throw new Error('webhook-viesti sisältää URL:n');
     if (!sent.body.includes('kiitos, että valitsit') || !sent.body.includes('PDF') || !sent.body.includes('15.11.2026') || !sent.htmlBody.includes('kiitos, että valitsit') || !sent.pdfHtml.includes('Peruuttamisoikeus') || sent.order.returnDate !== '2026-11-15') throw new Error('email sisältö puutteellinen');
     if ('commission' in sent.order) throw new Error('email order sisältää provision');
