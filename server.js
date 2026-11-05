@@ -11,10 +11,13 @@ const DEFAULTS = { maxPickupPerDay: 24, storageCapacity: 50, turnaroundDays: 3, 
 const DEFAULT_SELLERS = [
   { code: 'ROOPE669', name: 'Roope Liimatainen', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 0, commissionPerMedium: 0, active: true },
   { code: 'AHMED669', name: 'Ahmed Alguvercin', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 0, commissionPerMedium: 0, active: true },
-  ...[1, 2, 3, 4].map(i => ({ code: 'MYYJA' + i + '669', name: 'Myyjä ' + i, commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 20, commissionPerMedium: 16, active: true }))
+  { code: 'JANI669', name: 'Jani', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 20, commissionPerMedium: 16, active: true },
+  { code: 'VILMA669', name: 'Vilma', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 20, commissionPerMedium: 16, active: true },
+  { code: 'SEPI669', name: 'Sepi', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 20, commissionPerMedium: 16, active: true },
+  { code: 'JERE669', name: 'Jere', commissionPct: 0, commissionPerCarpet: 0, commissionPerLarge: 20, commissionPerMedium: 16, active: true },
 ];
 DEFAULTS.sellers = DEFAULT_SELLERS;
-const OLD_CODES = ['ROOPE', 'AHMED']; // korvattu ROOPE669 / AHMED669
+const OLD_CODES = ['ROOPE', 'AHMED', 'MYYJA1669', 'MYYJA2669', 'MYYJA3669', 'MYYJA4669']; // korvattu ROOPE669 / AHMED669
 // Myyjät: koodi, nimi, provisio-%, €/matto sekä €/iso matto ja €/keski- tai pieni matto. Vanha sellerCodes-lista muunnetaan myyjiksi automaattisesti.
 const cleanSellers = list => { const seen = new Set(); return (Array.isArray(list) ? list : []).map(x => ({
   code: String(x.code || '').toUpperCase().replace(/[^A-Z0-9ÅÄÖ_-]/g, '').slice(0, 20), name: String(x.name || '').trim().slice(0, 80),
@@ -86,7 +89,7 @@ http.createServer(async (req, res) => {
         postal: String(b.postal||'').slice(0,10), city: String(b.city||'Tampere').slice(0,60), notes: String(b.notes||'').slice(0,1000),
         medium: med, large: lg, carpetsTotal: n, priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, total,
         vat: Math.round(total - total / (1 + s.vatPct / 100)) === 0 ? 0 : +(total - total / (1 + s.vatPct / 100)).toFixed(2),
-        payment: b.payment === 'heti' ? 'maksettu heti' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
+        payment: b.payment === 'heti' ? 'maksettu heti' : b.payment === 'lasku' ? 'lasku 14 vrk' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
         startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
         sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
         commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) : 0,
