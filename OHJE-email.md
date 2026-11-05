@@ -87,6 +87,8 @@ if (b.action === 'email') {
 }
 ```
 
+Koko webhook (sähköposti, tilauksen upsert, `getOrder` ja `maxNumber`) on tiedostossa `sheets/Code.gs`. Julkaise se ohjeella `sheets/OHJE.md`, jotta vahvistus säilyy palvelimen uudelleenkäynnistyksen yli. Pelkkä sähköpostihaara ei riitä, jos korvaat koko skriptin.
+
 ## Uudelleenjulkaisu (pakollinen Code.gs-muutoksen jälkeen)
 
 Ilman uutta versiota vanha skripti lähettää yhä tekstin (ei enää myyjälinkkiä), mutta PDF-liite jää pois.

@@ -1,6 +1,7 @@
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const cap = require('./capacity');
 const { buildCustomerEmail, clampExtras, fiDate, resolveAgreedReturn, assertOutgoingEmail } = require('./confirmation');
+const { orderFromSheet, ORDER_GONE, ORDER_UNAVAILABLE } = require('./sheets-order');
 const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
@@ -37,7 +38,24 @@ function load() { try { const db = JSON.parse(fs.readFileSync(DATA)); db.setting
   for (const d of DEFAULT_SELLERS) if (!db.settings.sellers.some(x => x.code === d.code)) db.settings.sellers.push({ ...d });
   db.settings.sellerCodes = db.settings.sellers.filter(x => x.active).map(x => x.code); return db; } catch { return { settings: normalize({ ...DEFAULTS, sellers: DEFAULT_SELLERS.map(x => ({ ...x })) }), orders: [] }; } }
 const findSeller = code => db.settings.sellers.find(x => x.active && x.code === String(code || '').trim().toUpperCase());
+function sheetsSecret() { return (process.env.SHEETS_SECRET || '').trim(); }
+function sheetSnapshot(o, shownReturn) {
+  return {
+    id: o.id, number: o.number, createdAt: o.createdAt, channel: o.channel, status: o.status,
+    name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city,
+    notes: o.notes || '', customerNotes: o.notes || '',
+    medium: o.medium || 0, large: o.large || 0, carpetsTotal: o.carpetsTotal || ((o.medium || 0) + (o.large || 0)),
+    extrasHair: o.extrasHair || 0, extrasOdor: o.extrasOdor || 0,
+    priceMedium: o.priceMedium, priceLarge: o.priceLarge, vatPct: o.vatPct, total: o.total, vat: o.vat,
+    payment: o.payment, pickupDate: o.pickupDate, pickupTime: o.pickupTime || '',
+    sellerCode: o.sellerCode || '', sellerName: o.sellerName || '', commission: o.commission || 0,
+    termsVersion: o.termsVersion || '', agreedReturnDate: o.agreedReturnDate || shownReturn || '',
+    estReturnAtBooking: o.estReturnAtBooking || shownReturn || '', returnDate: shownReturn || '',
+    startEarly: !!o.startEarly, marketingConsent: !!o.marketingConsent
+  };
+}
 // Google Sheets -kirjaus (kestävä tallennus). Fire-and-forget: virhe ei koskaan estä tilausta.
+// Huomiot-sarake pysyy ihmisluettavana. snapshot on se, josta vahvistus ja sähköposti kootaan uudelleen.
 function toSheets(o) {
   const url = process.env.SHEETS_WEBHOOK_URL; if (!url || typeof fetch !== 'function') return;
   let ret = null; try { ret = cap.simulate(db.orders, db.settings).returns[o.id] || null; } catch {}
@@ -48,13 +66,32 @@ function toSheets(o) {
   if (o.extrasOdor) extraBits.push('Hajunpoisto (kaikki matot)');
   if (shownReturn) extraBits.push('Palautus ' + fiDate(shownReturn));
   const notesOut = [o.notes, extraBits.join(', ')].filter(Boolean).join(' · ');
-  const order = { number: o.number, createdAt: o.createdAt, channel: o.channel, sellerCode: o.sellerCode || '', sellerName: o.sellerName || (sl && sl.name) || '',
-    name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city, pickupDate: o.pickupDate, pickupTime: o.pickupTime,
-    large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: shownReturn, notes: notesOut, status: o.status, payment: o.payment,
-    extrasHair: o.extrasHair || 0, extrasOdor: o.extrasOdor || 0 };
-  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
+  const snapshot = sheetSnapshot(o, shownReturn);
+  const order = { ...snapshot, sellerName: o.sellerName || (sl && sl.name) || '', notes: notesOut, customerNotes: o.notes || '', snapshot };
+  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: sheetsSecret(), order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
     .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
     .catch(e => console.error('Sheets-virhe', o.number, e.message));
+}
+async function postSheetsRaw(payload, timeoutMs) {
+  const url = process.env.SHEETS_WEBHOOK_URL;
+  if (!url) throw new Error('Sähköpostipalvelu ei ole käytössä (SHEETS_WEBHOOK_URL puuttuu).');
+  if (typeof fetch !== 'function') throw new Error('Sähköpostipalvelu ei ole käytössä.');
+  const ms = timeoutMs || 25000;
+  // Apps Script palauttaa 302 → echo-URL; follow ei toimi POST:lle, joten haetaan Location erikseen.
+  let r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual', signal: AbortSignal.timeout(ms) });
+  if (r.status >= 300 && r.status < 400) {
+    const loc = r.headers.get('location');
+    if (!loc) throw new Error('Sähköpostipalvelu ei vastannut (puuttuva ohjaus).');
+    r = await fetch(loc, { signal: AbortSignal.timeout(ms) });
+  }
+  let j = null; try { j = await r.json(); } catch {}
+  if (r.status >= 400 || !j) {
+    const msg = (j && j.error) || ('Sheets HTTP ' + r.status);
+    const err = new Error(String(msg).slice(0, 300));
+    err.status = r.status;
+    throw err;
+  }
+  return j;
 }
 async function sendEmailViaSheets({ to, subject, body: plainBody, htmlBody, pdfHtml, pdfFilename, order }) {
   const url = process.env.SHEETS_WEBHOOK_URL;
@@ -66,7 +103,7 @@ async function sendEmailViaSheets({ to, subject, body: plainBody, htmlBody, pdfH
   // Jos body on tyhjä, Gmail voi näyttää tyhjän viestin kun htmlBody ei renderöidy.
   const message = assertOutgoingEmail(plainBody, htmlBody);
   const fields = {
-    secret: (process.env.SHEETS_SECRET || '').trim(),
+    secret: sheetsSecret(),
     action: 'email',
     to,
     subject: subject || '',
@@ -83,19 +120,66 @@ async function sendEmailViaSheets({ to, subject, body: plainBody, htmlBody, pdfH
   if (iBody < 0 || iHtml < iBody || (iPdf !== -1 && iPdf < iHtml)) {
     throw new Error('Sähköpostin kenttäjärjestys on väärä.');
   }
-  // Apps Script palauttaa 302 → echo-URL; follow ei toimi POST:lle, joten haetaan Location erikseen.
-  let r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual', signal: AbortSignal.timeout(25000) });
-  if (r.status >= 300 && r.status < 400) {
-    const loc = r.headers.get('location');
-    if (!loc) throw new Error('Sähköpostipalvelu ei vastannut (puuttuva ohjaus).');
-    r = await fetch(loc, { signal: AbortSignal.timeout(25000) });
+  try {
+    const j = await postSheetsRaw(payload);
+    if (j.ok !== true) throw new Error(String(j.error || 'Sähköpostin lähetys epäonnistui.').slice(0, 300));
+    return j;
+  } catch (e) {
+    if (/Sähköposti/.test(e.message)) throw e;
+    throw new Error(('Sähköpostin lähetys epäonnistui (' + e.message + ').').slice(0, 300));
   }
-  let j = null; try { j = await r.json(); } catch {}
-  if (r.status >= 400 || !j || j.ok !== true) {
-    const msg = (j && j.error) || ('Sähköpostin lähetys epäonnistui (HTTP ' + r.status + ').');
-    throw new Error(String(msg).slice(0, 300));
+}
+// Suurin MR-YYYY-NNNN. null = Sheets ei kertonut (vanha skripti, verkko tai tyhjä vastaus).
+async function sheetsMaxNumber(year) {
+  if (!process.env.SHEETS_WEBHOOK_URL || typeof fetch !== 'function') return null;
+  try {
+    const j = await postSheetsRaw(JSON.stringify({ secret: sheetsSecret(), action: 'maxNumber', year: String(year) }), 8000);
+    if (j && j.ok === true && Number.isFinite(+j.max)) return +j.max;
+  } catch (e) { console.error('Sheets-maxNumber', e.message); }
+  return null;
+}
+async function allocateNumber() {
+  const year = new Date().getFullYear();
+  const re = new RegExp('^MR-' + year + '-(\\d+)$');
+  let max = 0;
+  for (const o of db.orders) {
+    const m = String(o.number || '').match(re);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
   }
-  return j;
+  if (!process.env.SHEETS_WEBHOOK_URL) return 'MR-' + year + '-' + String(max + 1).padStart(4, '0');
+  const remote = await sheetsMaxNumber(year);
+  if (Number.isFinite(remote)) return 'MR-' + year + '-' + String(Math.max(max, remote) + 1).padStart(4, '0');
+  // Sheets ei kertonut suurinta numeroa. 0001 ylikirjoittaisi vanhan rivin, jos välimuisti on tyhjä tai vain osittain täytetty.
+  return 'MR-' + year + '-' + Date.now().toString(36).toUpperCase();
+}
+async function fetchOrderFromSheets(id) {
+  if (!process.env.SHEETS_WEBHOOK_URL || typeof fetch !== 'function') return { order: null };
+  try {
+    const j = await postSheetsRaw(JSON.stringify({ secret: sheetsSecret(), action: 'getOrder', id }), 20000);
+    if (!j || j.ok !== true || !j.order) return { order: null };
+    const order = orderFromSheet(j.order);
+    if (!order || order.id !== id) return { order: null };
+    return { order };
+  } catch (e) {
+    console.error('Sheets-haku', id, e.message);
+    return { unavailable: true, order: null };
+  }
+}
+function rememberOrder(order) {
+  if (!order) return null;
+  if (!db.orders.some(x => x.id === order.id)) { db.orders.push(order); save(db); }
+  return db.orders.find(x => x.id === order.id) || order;
+}
+async function findOrder(id) {
+  const local = db.orders.find(x => x.id === id);
+  if (local) return { order: local };
+  const got = await fetchOrderFromSheets(id);
+  if (got.order) return { order: rememberOrder(got.order) };
+  return got;
+}
+function replyMissing(res, got) {
+  if (got && got.unavailable) return send(res, 503, { error: ORDER_UNAVAILABLE });
+  return send(res, 404, { error: ORDER_GONE });
 }
 const emailCooldown = new Map(); // orderId -> last send ms
 function save(db) { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(db, null, 2)); fs.renameSync(DATA + '.tmp', DATA); }
@@ -138,7 +222,8 @@ http.createServer(async (req, res) => {
       const xtra = clampExtras(med, lg, b.extrasHair ?? b.hairRemoval, b.extrasOdor ?? b.odorRemoval);
       const hair = xtra.extrasHair, odor = xtra.extrasOdor, extrasSum = xtra.extrasSum;
       const total = med * s.priceMedium + lg * s.priceLarge + extrasSum;
-      const o = { id: crypto.randomUUID(), number: 'MR-' + new Date().getFullYear() + '-' + String(db.orders.length + 1).padStart(4, '0'),
+      const number = await allocateNumber();
+      const o = { id: crypto.randomUUID(), number,
         createdAt: new Date().toISOString(), channel, status: 'vahvistettu',
         name: String(b.name).slice(0,120), phone: String(b.phone).slice(0,40), email: String(b.email||'').slice(0,120), address: String(b.address).slice(0,200),
         postal: String(b.postal||'').slice(0,10), city: String(b.city||'Tampere').slice(0,60), notes: String(b.notes||'').slice(0,1000),
@@ -155,8 +240,9 @@ http.createServer(async (req, res) => {
     }
     let m;
     if ((m = p.match(/^\/api\/orders\/([\w-]{36})\/email$/)) && req.method === 'POST') {
-      const o = withReturns().find(x => x.id === m[1]);
-      if (!o) return send(res, 404, { error: 'Ei löydy' });
+      const got = await findOrder(m[1]);
+      const o = got.order ? withReturns().find(x => x.id === m[1]) : null;
+      if (!o) return replyMissing(res, got);
       const b = await body(req);
       const to = String(b.to || o.email || '').trim();
       if (!to || !to.includes('@')) return send(res, 400, { error: 'Asiakkaalla ei ole sähköpostiosoitetta.' });
@@ -173,7 +259,9 @@ http.createServer(async (req, res) => {
       }
     }
     if ((m = p.match(/^\/api\/orders\/([\w-]{36})$/)) && req.method === 'GET') {
-      const o = withReturns().find(x => x.id === m[1]); return o ? send(res, 200, publicOrder(o)) : send(res, 404, { error: 'Ei löydy' });
+      const got = await findOrder(m[1]);
+      const o = got.order ? withReturns().find(x => x.id === m[1]) : null;
+      return o ? send(res, 200, publicOrder(o)) : replyMissing(res, got);
     }
     if ((m = p.match(/^\/api\/admin\/photo\/([\w-]{36})$/))) {
       if (u.searchParams.get('pin') !== ADMIN_PIN && !isAdmin(req)) return send(res, 401, { error: 'Väärä PIN' });
