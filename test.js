@@ -107,6 +107,29 @@ if (many.order.returnDate !== '2026-11-17' || !many.body.includes('17.11.2026') 
 if (!many.pdfHtml.includes('Karvanpoisto (per matto)') || !many.pdfHtml.includes('Hajunpoisto (kaikki matot)')) { console.error('VIRHE: pdfHtml-rivien nimet'); process.exit(1); }
 console.log('Asiakasviesti OK (ei URL:ää, htmlBody + pdfHtml, ei provisiota)');
 
+const { orderFromSheet, ORDER_GONE, ORDER_UNAVAILABLE } = require('./sheets-order');
+const flatId = '11111111-1111-4111-8111-111111111111';
+const flat = orderFromSheet({
+  id: flatId, number: 'MR-2026-0009', createdAt: '2026-11-05T08:15:00.000Z', channel: 'verkko', status: 'vahvistettu',
+  name: 'Maija <Test>', phone: '0401234567', email: 'maija@example.com', address: 'Testikatu 1', postal: '33100', city: 'Tampere',
+  pickupDate: '2026-11-11', pickupTime: '9–11', returnDate: '2026-11-15', medium: '1', large: '1', extrasHair: '1', total: '108', vat: '21.94',
+  payment: 'palautuksen yhteydessä', notes: 'Karvanpoisto 1 kpl, Palautus 15.11.2026'
+});
+if (!flat || flat.priceMedium !== 44 || flat.priceLarge !== 54 || flat.agreedReturnDate !== '2026-11-15' || flat.extrasHair !== 1 || flat.carpetsTotal !== 2) {
+  console.error('VIRHE: Sheets-rivi ilman snapshotia', flat); process.exit(1);
+}
+const flatMail = buildCustomerEmail(flat);
+if (!flatMail.body.includes('Maija <Test>') || !flatMail.body.includes('15.11.2026') || flatMail.order.returnDate !== '2026-11-15') {
+  console.error('VIRHE: Sheets-rivistä ei syntynyt sähköpostia'); process.exit(1);
+}
+if (orderFromSheet({ number: 'MR-2026-0001', name: 'Ei id' })) { console.error('VIRHE: tilaus ilman UUID:tä meni läpi'); process.exit(1); }
+const snap = orderFromSheet({ id: flatId, notes: 'Karvanpoisto 1 kpl', total: 1, snapshot: { ...flat, notes: 'Ovikoodi 1234', customerNotes: 'Ovikoodi 1234', total: 108 } });
+if (!snap || snap.notes !== 'Ovikoodi 1234' || snap.total !== 108 || snap.id !== flatId) { console.error('VIRHE: snapshot ei voittanut sarakkeita', snap); process.exit(1); }
+if (!/palvelinpäivityksessä/.test(ORDER_GONE) || !/Tee sopimus uudelleen/.test(ORDER_GONE) || !/Yritä hetken päästä/.test(ORDER_UNAVAILABLE)) {
+  console.error('VIRHE: virhetekstit', ORDER_GONE, ORDER_UNAVAILABLE); process.exit(1);
+}
+console.log('Sheets-fallbackin kentät OK');
+
 const http = require('http');
 const { spawn } = require('child_process');
 const os = require('os');
@@ -124,8 +147,17 @@ function freePort() {
   const appPort = await freePort();
   const posts = [];
   const rawPosts = [];
+  const store = new Map();
+  const echo = new Map();
+  let echoN = 0;
+  const FAIL_ID = '00000000-0000-0000-0000-000000000099';
   const hook = http.createServer((req, res) => {
-    if (req.method === 'POST' && req.url === '/hook') {
+    const url = new URL(req.url, 'http://127.0.0.1');
+    if (req.method === 'GET' && url.pathname === '/echo') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(echo.get(url.searchParams.get('t')) || '{"ok":false}');
+    }
+    if (req.method === 'POST' && url.pathname === '/hook') {
       let b = '';
       req.on('data', c => { b += c; });
       req.on('end', () => {
@@ -137,12 +169,35 @@ function freePort() {
           res.writeHead(302, { Location: 'http://127.0.0.1:' + hookPort + '/done' });
           return res.end();
         }
+        if (json.action === 'maxNumber') {
+          let max = 0;
+          const re = new RegExp('^MR-' + json.year + '-(\\d+)$');
+          for (const o of store.values()) {
+            const m = String(o.number || '').match(re);
+            if (m) max = Math.max(max, parseInt(m[1], 10));
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, max }));
+        }
+        if (json.action === 'getOrder') {
+          if (json.id === FAIL_ID) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            return res.end('{"ok":false,"error":"boom"}');
+          }
+          const hit = store.get(json.id);
+          const body = JSON.stringify(hit ? { ok: true, order: hit } : { ok: false, error: 'Ei löydy' });
+          const token = String(++echoN);
+          echo.set(token, body);
+          res.writeHead(302, { Location: 'http://127.0.0.1:' + hookPort + '/echo?t=' + token });
+          return res.end();
+        }
+        if (!json.action && json.order && json.order.id) store.set(json.order.id, json.order);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end('{"ok":true}');
       });
       return;
     }
-    if (req.url === '/done') {
+    if (url.pathname === '/done') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end('{"ok":true}');
     }
@@ -150,7 +205,7 @@ function freePort() {
   });
   await new Promise(r => hook.listen(hookPort, '127.0.0.1', r));
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mr-'));
-  const child = spawn(process.execPath, ['server.js'], {
+  let child = spawn(process.execPath, ['server.js'], {
     cwd: __dirname,
     env: { ...process.env, PORT: String(appPort), DATA_FILE: path.join(dir, 'db.json'), SHEETS_WEBHOOK_URL: 'http://127.0.0.1:' + hookPort + '/hook', SHEETS_SECRET: 'test-secret', PUBLIC_BASE_URL: 'https://example.test' },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -173,6 +228,8 @@ function freePort() {
     while (!posts.some(p => !p.action && p.order) && Date.now() - t1 < 3000) await new Promise(r => setTimeout(r, 40));
     const sync = posts.find(p => !p.action && p.order);
     if (!sync || sync.secret !== 'test-secret' || sync.order.commission == null || sync.order.number == null) throw new Error('Sheets-kirjaus rikki: ' + JSON.stringify(sync));
+    if (sync.order.id !== created.id || sync.order.number !== 'MR-2026-0001') throw new Error('Sheets-id tai numero: ' + sync.order.id + ' ' + sync.order.number);
+    if (!sync.order.snapshot || sync.order.snapshot.id !== created.id || sync.order.snapshot.notes !== 'Ovikoodi 1234' || sync.order.snapshot.priceMedium !== 44 || sync.order.snapshot.agreedReturnDate !== '2026-11-15') throw new Error('Sheets-snapshot: ' + JSON.stringify(sync.order.snapshot));
     if (sync.pdfHtml || sync.action) throw new Error('Sheets-kirjaus sai sähköpostikenttiä');
     if (sync.order.returnDate !== '2026-11-15' || !sync.order.notes.includes('Palautus 15.11.2026') || !sync.order.notes.includes('Karvanpoisto 1 kpl') || sync.order.notes.includes('koko tilaus')) throw new Error('Sheets-huomio: ' + sync.order.notes + ' / ' + sync.order.returnDate);
     const pub = await (await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + created.id)).json();
@@ -202,6 +259,8 @@ function freePort() {
     const page = await fetch('http://127.0.0.1:' + appPort + '/vahvistus?id=' + created.id);
     const html = await page.text();
     if (html.includes('Kopioi linkki asiakkaalle') || html.includes('koko tilaus') || !html.includes('PDF-liitteenä') || !html.includes('Lähetä sähköpostilla') || !html.includes('Karvanpoisto (per matto)') || !html.includes('Hajunpoisto (kaikki matot)')) throw new Error('vahvistussivun tekstit');
+    if (!html.includes('Tilaus katosi palvelinpäivityksessä') || !html.includes('Tee sopimus uudelleen')) throw new Error('vahvistuksen katoamisviesti puuttuu');
+    if (html.split("api('/api/orders/'+id)").length - 1 < 2) throw new Error('vahvistus ei hae tilausta uudelleen ennen sähköpostia');
     const sellerRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       channel: 'kotimyynti', sellerCode: 'JANI669', name: 'Matti Myynti', phone: '0409999999', email: 'matti@example.com', address: 'Myyntikatu 2',
       pickupDate: '2026-11-12', returnDate: '2026-11-18', medium: 2, large: 1, extrasHair: 3, extrasOdor: 1, acceptTerms: true
@@ -227,6 +286,49 @@ function freePort() {
       pickupDate: '2026-11-14', returnDate: '2026-11-22', medium: 1, large: 0, acceptTerms: true
     })});
     if (badRes.status !== 400) throw new Error('liian myöhäinen palautus meni läpi ' + badRes.status);
+    const survivedId = created.id;
+    const firstChild = child;
+    await new Promise(resolve => {
+      firstChild.once('exit', () => resolve());
+      firstChild.kill();
+      setTimeout(() => { try { firstChild.kill('SIGKILL'); } catch {} resolve(); }, 1500);
+    });
+    await new Promise(r => setTimeout(r, 100));
+    fs.rmSync(path.join(dir, 'db.json'), { force: true });
+    log = '';
+    child = spawn(process.execPath, ['server.js'], {
+      cwd: __dirname,
+      env: { ...process.env, PORT: String(appPort), DATA_FILE: path.join(dir, 'db.json'), SHEETS_WEBHOOK_URL: 'http://127.0.0.1:' + hookPort + '/hook', SHEETS_SECRET: 'test-secret', PUBLIC_BASE_URL: 'https://example.test' },
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    child.stdout.on('data', d => { log += d; });
+    child.stderr.on('data', d => { log += d; });
+    const tRestart = Date.now();
+    while (!log.includes('Mattorundi') && Date.now() - tRestart < 8000) await new Promise(r => setTimeout(r, 40));
+    if (!log.includes('Mattorundi')) throw new Error('palvelin ei käynnistynyt uudelleen: ' + log);
+    const againRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + survivedId);
+    const again = await againRes.json();
+    if (againRes.status !== 200 || again.id !== survivedId || again.email !== 'maija@example.com' || again.returnDate !== '2026-11-15' || again.notes !== 'Ovikoodi 1234' || again.priceMedium !== 44 || again.extrasHair !== 1 || 'commission' in again) {
+      throw new Error('Sheets-palautus ' + againRes.status + ' ' + JSON.stringify(again));
+    }
+    const againMail = await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + survivedId + '/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const againMailJson = await againMail.json();
+    if (againMail.status !== 200 || againMailJson.ok !== true || againMailJson.to !== 'maija@example.com') throw new Error('sähköposti tyhjästä välimuistista ' + againMail.status + ' ' + JSON.stringify(againMailJson) + ' ' + log);
+    const missingRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders/00000000-0000-0000-0000-000000000001');
+    const missingJson = await missingRes.json();
+    if (missingRes.status !== 404 || !/Tee sopimus uudelleen/.test(missingJson.error) || missingJson.error === 'Ei löydy') throw new Error('katoamisviesti ' + missingRes.status + ' ' + JSON.stringify(missingJson));
+    const downRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + FAIL_ID);
+    const downJson = await downRes.json();
+    if (downRes.status !== 503 || !/Yritä hetken päästä/.test(downJson.error) || /Tee sopimus uudelleen/.test(downJson.error)) throw new Error('Sheets-katko ' + downRes.status + ' ' + JSON.stringify(downJson));
+    const nextRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      name: 'Uusi Numero', phone: '0403333333', address: 'Numerokatu 1', pickupDate: '2026-11-14', medium: 1, large: 0, acceptTerms: true
+    })});
+    const nextCreated = await nextRes.json();
+    if (nextRes.status !== 201) throw new Error('numeroinnin jatkotilaus ' + nextRes.status + ' ' + JSON.stringify(nextCreated));
+    const tNum = Date.now();
+    while (!posts.some(p => p.order && p.order.id === nextCreated.id) && Date.now() - tNum < 3000) await new Promise(r => setTimeout(r, 40));
+    const nextSync = posts.find(p => p.order && p.order.id === nextCreated.id);
+    if (!nextSync || nextSync.order.number !== 'MR-2026-0004') throw new Error('numero ei jatkunut: ' + (nextSync && nextSync.order.number));
     console.log('Webhook-email OK, kentät:', keys);
     console.log('Kaikki testit OK');
   } catch (e) {

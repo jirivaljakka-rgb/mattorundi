@@ -10,6 +10,17 @@
 <div class="card" id="c">Ladataan…</div>
 </div></section>
 <script src="common.js"></script><script src="terms.js"></script><script>
+function goneText(msg){
+  if(!msg||msg==='Ei löydy'||msg==='Virhe 404') return 'Tilaus katosi palvelinpäivityksessä, eikä sitä löydy enää. Tee sopimus uudelleen.';
+  return msg;
+}
+function showGone(msg){
+  const t=goneText(msg);
+  $('#c').innerHTML='<span class="err"></span>';
+  $('#c').querySelector('.err').textContent=t;
+  $('#actions').style.display='none';
+  return t;
+}
 (async()=>{
 const id=new URLSearchParams(location.search).get('id');
 try{
@@ -36,13 +47,18 @@ mailBtn.onclick=async()=>{
   if(!o.email){ mailMsg.innerHTML='<span class="err">Tilauksella ei ole sähköpostiosoitetta.</span>'; return; }
   mailBtn.disabled=true; mailMsg.textContent='Lähetetään…';
   try{
+    const fresh=await api('/api/orders/'+id);
+    if(fresh&&fresh.email) o.email=fresh.email;
     await api('/api/orders/'+id+'/email',{method:'POST',body:JSON.stringify({})});
     mailMsg.innerHTML='<span style="color:var(--green,#0F3B2C);font-weight:700">Lähetetty osoitteeseen '+o.email+'. Asiakas saa tilausvahvistuksen PDF-liitteenä.</span>';
     mailBtn.textContent='Lähetetty';
   }catch(err){
-    mailMsg.innerHTML='<span class="err">'+(err.message||'Lähetys epäonnistui')+'</span>';
+    const msg=goneText(err.message);
+    if(/Tee sopimus uudelleen/.test(msg)){ showGone(msg); return; }
+    mailMsg.innerHTML='<span class="err"></span>';
+    mailMsg.querySelector('.err').textContent=msg||'Lähetys epäonnistui';
     mailBtn.disabled=false;
   }
 };
-}catch(e){$('#c').innerHTML='<span class="err">'+e.message+'</span>';$('#actions').style.display='none'}})()
+}catch(e){ showGone(e.message); }})()
 </script></body></html>
