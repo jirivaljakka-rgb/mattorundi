@@ -59,21 +59,29 @@ function clampExtras(medium, large, hair, odor) {
   return { carpets: n, extrasHair: h, extrasOdor: o, extrasSum: 10 * h + 10 * o };
 }
 
-// Asiakkaalle luvattu palautus: nouto+1 … nouto+6, oletus nouto+4.
+// Pilotin palautus: vain 17.11.2026 ja 18.11.2026, klo 9–17 (2 h ikkunat).
+const RETURN_DAYS = ['2026-11-17', '2026-11-18'];
+const RETURN_TIME_SLOTS = ['9-11', '11-13', '13-15', '15-17'];
 function returnWindow(pickup) {
   const iso = ymd(pickup);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
-  const days = [];
-  for (let i = 1; i <= 6; i++) days.push(addDaysYmd(iso, i));
-  return { min: days[0], max: days[5], defaultDate: addDaysYmd(iso, 4), days };
+  return { days: RETURN_DAYS.slice(), defaultDate: RETURN_DAYS[0], times: RETURN_TIME_SLOTS.slice() };
 }
-function resolveAgreedReturn(pickup, raw) {
+function resolveAgreedReturn(pickup, raw, rawTime) {
   const w = returnWindow(pickup);
   if (!w) return { ok: false, error: 'Noutopäivä ei kelpaa.' };
   const chosen = raw == null ? '' : String(raw).trim().slice(0, 10);
-  if (!chosen) return { ok: true, date: w.defaultDate };
-  if (!w.days.includes(chosen)) return { ok: false, error: 'Palautuspäivä voi olla 1–6 päivää noudon jälkeen.' };
-  return { ok: true, date: chosen };
+  const date = chosen || w.defaultDate;
+  if (!w.days.includes(date)) return { ok: false, error: 'Palautuspäivä on 17.11.2026 tai 18.11.2026.' };
+  const time = rawTime == null ? '' : String(rawTime).trim().slice(0, 20);
+  if (time && !w.times.includes(time)) return { ok: false, error: 'Palautusaika on klo 9–17.' };
+  return { ok: true, date, time };
+}
+function formatReturn(order) {
+  const date = fiDate(order.returnDate);
+  const time = oneLine(order.returnTime);
+  if (!date) return '';
+  return time ? date + ' klo ' + time : date;
 }
 
 function customerOrder(o) {
@@ -105,6 +113,7 @@ function customerOrder(o) {
     pickupDate: o.pickupDate || '',
     pickupTime: o.pickupTime || '',
     returnDate,
+    returnTime: oneLine(o.returnTime || ''),
     medium, large, priceMedium, priceLarge, extrasHair, extrasOdor, lines,
     total: +o.total || 0,
     vat: o.vat != null ? +o.vat : 0,
@@ -133,7 +142,7 @@ function mailFacts(order) {
     number: order.number || '',
     when: when || 'ajankohta vahvistetaan erikseen',
     pickup: fiDate(order.pickupDate) + (time ? ' ' + time : ''),
-    back: fiDate(order.returnDate),
+    back: formatReturn(order) || 'sovitaan erikseen',
     sum: eur(order.total) + ' (sis. ALV ' + vatPct + ' %)',
     phone: COMPANY.phone,
     email: COMPANY.email
@@ -152,7 +161,7 @@ function buildBody(order) {
     '',
     'Sopimus: ' + f.when + '.',
     'Nouto: ' + f.pickup + '.',
-    'Arvioitu palautus: ' + f.back + '.',
+    'Palautus: ' + f.back + '.',
     'Summa: ' + f.sum + '.',
     '',
     'Jos sinulla on kysyttävää ennen noutoa, vastaa tähän viestiin tai soita ' + f.phone + '.',
@@ -176,7 +185,7 @@ function buildHtmlBody(order) {
     '<p style="margin:0 0 16px">Tilausvahvistus ja ehdot ovat tämän viestin PDF-liitteessä.</p>' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF8F1;border-left:4px solid #0F3B2C;margin:0 0 16px"><tr><td style="padding:4px 16px 8px">' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif">' +
-    row('Sopimus', f.when) + row('Nouto', f.pickup) + row('Arvioitu palautus', f.back) + row('Summa', f.sum) +
+    row('Sopimus', f.when) + row('Nouto', f.pickup) + row('Palautus', f.back) + row('Summa', f.sum) +
     '</table></td></tr></table>' +
     '<p style="margin:0 0 16px">Jos sinulla on kysyttävää ennen noutoa, vastaa tähän viestiin tai soita ' + esc(f.phone) + '.</p>' +
     '<p style="margin:0;color:#3d5248">Ystävällisin terveisin,<br><strong style="color:#0F3B2C">Mattorundi / Valaja Team Osk</strong><br>' + esc(f.email) + ' · ' + esc(f.phone) + '</p>' +
@@ -233,7 +242,7 @@ function buildPdfHtml(order) {
 <h2>Asiakas ja nouto</h2>
 <table><tr>
 <td style="width:50%"><b>Asiakas</b><br>${esc(order.name)}<br>${esc(order.address)}<br>${esc(order.postal)} ${esc(order.city)}<br>${esc(order.phone)}<br>${esc(order.email)}</td>
-<td><b>Tilaus</b><br>Sopimuspäivä: ${esc(fiDateTime(order.createdAt))}<br>Myyntitapa: ${esc(channelLabel(order))}<br><b>Nouto: ${esc(fiDate(order.pickupDate))} ${esc(order.pickupTime)}</b><br><b>Arvioitu palautus: ${esc(order.returnDate ? fiDate(order.returnDate) : '–')}</b><br>Maksu: ${esc(order.payment)}</td>
+<td><b>Tilaus</b><br>Sopimuspäivä: ${esc(fiDateTime(order.createdAt))}<br>Myyntitapa: ${esc(channelLabel(order))}<br><b>Nouto: ${esc(fiDate(order.pickupDate))} ${esc(order.pickupTime)}</b><br><b>Palautus: ${esc(formatReturn(order) || '–')}</b><br>Maksu: ${esc(order.payment)}</td>
 </tr></table>
 <h2>Palvelut ja hinta</h2>
 <table class="lines"><tr><th>Palvelu</th><th class="num">Kpl</th><th class="num">á</th><th class="num">Yhteensä</th></tr>
@@ -241,9 +250,8 @@ ${rows}
 <tr><td colspan="3"><b>Yhteensä (sis. ALV ${esc(fiPct(order.vatPct))} %)</b></td><td class="num"><b>${esc(eur(order.total))}</b></td></tr>
 <tr><td colspan="3">josta ALV</td><td class="num">${esc(eur(order.vat))}</td></tr>
 </table>
-<p>Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Keskikokoinen matto (1–2,4 m²) ${esc(eur(order.priceMedium))}, iso matto (2,5–3,5 m²) ${esc(eur(order.priceLarge))}. Karvanpoisto 10 € / matto. Hajunpoisto 10 € (koskee kaikkia mattoja). Arvioitu palautus on oletuksena 4 päivää noudosta ja viimeistään 6 päivää noudosta.</p>
+<p>Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Pesu on käsinpesu. Yli 3,5 m² mattoja ei oteta vastaan. Keskikokoinen matto (1–2,4 m²) ${esc(eur(order.priceMedium))}, iso matto (2,5–3,5 m²) ${esc(eur(order.priceLarge))}. Karvanpoisto 10 € / matto. Hajunpoisto 10 € (koskee kaikkia mattoja). Palautus tällä jaksolla on 17.11.2026 tai 18.11.2026 klo 9–17.</p>
 ${notes}
-<div class="box"><b>Peruuttamisoikeus.</b> Voit peruuttaa sopimuksen ilmoittamatta syytä 14 päivän kuluessa sopimuspäivästä eli viimeistään ${esc(fiDate(order.cancelBy))}. Ilmoita sähköpostilla ${esc(COMPANY.email)} tai puhelimella ${esc(COMPANY.phone)}, tai käytä tämän vahvistuksen lopussa olevaa peruutuslomaketta.</div>
 ${early}${signed}
 <div class="terms"><h2>Tilausehdot</h2>${TERMS_HTML}${CANCEL_FORM_HTML(safeForm)}</div>
 </body></html>`;
@@ -267,4 +275,4 @@ function buildCustomerEmail(o) {
   };
 }
 
-module.exports = { buildCustomerEmail, customerOrder, fiDate, eur, clampExtras, resolveAgreedReturn, returnWindow, assertOutgoingEmail };
+module.exports = { buildCustomerEmail, customerOrder, fiDate, eur, clampExtras, resolveAgreedReturn, returnWindow, formatReturn, RETURN_DAYS, RETURN_TIME_SLOTS, assertOutgoingEmail };

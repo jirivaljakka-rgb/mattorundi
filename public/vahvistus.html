@@ -33,11 +33,10 @@ const rows=[
 ].join('');
 $('#c').innerHTML=`<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><span class="logo" style="color:var(--navy)"><b>MATTO</b>RUNDI</span><h2>Tilausvahvistus ${o.number}</h2></div><div style="text-align:right;font-size:14px">${COMPANY.name}<br>Perustajat: ${COMPANY.founders}<br>Y-tunnus: ${COMPANY.ytunnus}<br>${COMPANY.address}<br>${COMPANY.email} · ${COMPANY.phone}</div></div>
 <div class="row"><div><h3>Asiakas</h3>${o.name}<br>${o.address}<br>${o.postal||''} ${o.city||''}<br>${o.phone}<br>${o.email||''}</div>
-<div><h3>Tilaus</h3>Sopimuspäivä: ${new Date(o.createdAt).toLocaleString('fi-FI')}<br>Myyntitapa: ${o.channel==='kotimyynti'?'kotimyynti, myyjä '+o.sellerCode:'verkkovaraus'}<br><b>Nouto: ${fmtD(o.pickupDate)} ${o.pickupTime||''}</b><br><b>Arvioitu palautus: ${fmtD(o.returnDate)}</b><br>Maksu: ${o.payment}</div></div>
+<div><h3>Tilaus</h3>Sopimuspäivä: ${new Date(o.createdAt).toLocaleString('fi-FI')}<br>Myyntitapa: ${o.channel==='kotimyynti'?'kotimyynti, myyjä '+o.sellerCode:'verkkovaraus'}<br><b>Nouto: ${fmtD(o.pickupDate)} ${o.pickupTime||''}</b><br><b>Palautus: ${fmtD(o.returnDate)}${o.returnTime?' klo '+String(o.returnTime).replace(/[<>]/g,''):''}</b><br>Maksu: ${o.payment}</div></div>
 <table style="margin-top:16px"><tr><th>Palvelu</th><th>Kpl</th><th>á</th><th>Yhteensä</th></tr>${rows}<tr><td colspan="3"><b>Yhteensä (sis. ALV ${String(o.vatPct).replace('.',',')} %)</b></td><td><b>${eur(o.total)}</b></td></tr><tr><td colspan="3">josta ALV</td><td>${eur(o.vat)}</td></tr></table>
-<p style="font-size:14px">Hinta sisältää noudon, pesun, kuivauksen ja palautuksen.${o.notes?'<br>Lisätiedot: '+o.notes.replace(/</g,'&lt;'):''}</p>
-<p><b>Peruuttamisoikeus:</b> Voit peruuttaa sopimuksen ilmoittamatta syytä 14 päivän kuluessa sopimuspäivästä eli viimeistään ${new Date(new Date(o.createdAt).getTime()+14*864e5).toLocaleDateString('fi-FI')}. Ilmoita sähköpostilla ${COMPANY.email} tai puhelimella ${COMPANY.phone}, tai käytä alla olevaa peruutuslomaketta.
-${o.startEarly?'<br>Asiakas on pyytänyt palvelun aloittamista peruuttamisaikana (ks. ehtojen kohta 7).':''}</p>
+<p style="font-size:14px">Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Pesu on käsinpesu.${o.notes?'<br>Lisätiedot: '+o.notes.replace(/</g,'&lt;'):''}</p>
+${o.startEarly?'<p>Asiakas on pyytänyt palvelun aloittamista peruuttamisaikana (ks. ehtojen kohta 7).</p>':''}
 ${o.signature?`<p><b>Asiakkaan allekirjoitus:</b><br><img src="${o.signature}" style="max-width:320px;border-bottom:1px solid #333"></p>`:''}
 <div class="pb"><h2>Tilausehdot</h2>${TERMS_HTML}</div><div class="pb" style="border-top:2px dashed #999;margin-top:24px;padding-top:12px">${CANCEL_FORM_HTML(o)}</div>`;
 

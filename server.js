@@ -1,6 +1,6 @@
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const cap = require('./capacity');
-const { buildCustomerEmail, clampExtras, fiDate, resolveAgreedReturn, assertOutgoingEmail } = require('./confirmation');
+const { buildCustomerEmail, clampExtras, fiDate, resolveAgreedReturn, assertOutgoingEmail, RETURN_DAYS, RETURN_TIME_SLOTS } = require('./confirmation');
 const { orderFromSheet, ORDER_GONE, ORDER_UNAVAILABLE } = require('./sheets-order');
 const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
@@ -47,7 +47,7 @@ function sheetSnapshot(o, shownReturn) {
     medium: o.medium || 0, large: o.large || 0, carpetsTotal: o.carpetsTotal || ((o.medium || 0) + (o.large || 0)),
     extrasHair: o.extrasHair || 0, extrasOdor: o.extrasOdor || 0,
     priceMedium: o.priceMedium, priceLarge: o.priceLarge, vatPct: o.vatPct, total: o.total, vat: o.vat,
-    payment: o.payment, pickupDate: o.pickupDate, pickupTime: o.pickupTime || '',
+    payment: o.payment, pickupDate: o.pickupDate, pickupTime: o.pickupTime || '', returnTime: o.returnTime || '',
     sellerCode: o.sellerCode || '', sellerName: o.sellerName || '', commission: o.commission || 0,
     termsVersion: o.termsVersion || '', agreedReturnDate: o.agreedReturnDate || shownReturn || '',
     estReturnAtBooking: o.estReturnAtBooking || shownReturn || '', returnDate: shownReturn || '',
@@ -64,7 +64,7 @@ function toSheets(o) {
   const extraBits = [];
   if (o.extrasHair) extraBits.push('Karvanpoisto ' + o.extrasHair + ' kpl');
   if (o.extrasOdor) extraBits.push('Hajunpoisto (kaikki matot)');
-  if (shownReturn) extraBits.push('Palautus ' + fiDate(shownReturn));
+  if (shownReturn) extraBits.push('Palautus ' + fiDate(shownReturn) + (o.returnTime ? ' klo ' + o.returnTime : ''));
   const notesOut = [o.notes, extraBits.join(', ')].filter(Boolean).join(' · ');
   const snapshot = sheetSnapshot(o, shownReturn);
   const order = { ...snapshot, sellerName: o.sellerName || (sl && sl.name) || '', notes: notesOut, customerNotes: o.notes || '', snapshot };
@@ -196,13 +196,13 @@ function withReturns() { const sim = cap.simulate(db.orders, db.settings); retur
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x'); const p = u.pathname;
   try {
-    if (p === '/api/public-settings') { const s = db.settings; return send(res, 200, { priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, workDays: s.workDays, turnaroundDays: s.turnaroundDays, bookingHorizonDays: s.bookingHorizonDays, pickupDates: s.pickupDates.filter(d => d > today()) }); }
+    if (p === '/api/public-settings') { const s = db.settings; return send(res, 200, { priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, workDays: s.workDays, turnaroundDays: s.turnaroundDays, bookingHorizonDays: s.bookingHorizonDays, pickupDates: s.pickupDates.filter(d => d > today()), returnDays: RETURN_DAYS, returnTimes: RETURN_TIME_SLOTS }); }
     if (p === '/api/calendar') {
       const n = Math.max(1, parseInt(u.searchParams.get('n')) || 1);
       const from = u.searchParams.get('from') || today();
       const days = cap.calendar(db.orders, db.settings, from, Math.min(90, parseInt(u.searchParams.get('days')) || 42), n, today());
       const first = days.find(d => d.ok);
-      return send(res, 200, { days: days.map(d => ({ date: d.date, ok: d.ok, reason: d.ok ? null : d.reason, returnDate: d.ok ? cap.addDays(d.date, 4) : null })), nextFree: first ? first.date : null });
+      return send(res, 200, { days: days.map(d => ({ date: d.date, ok: d.ok, reason: d.ok ? null : d.reason, returnDate: null })), nextFree: first ? first.date : null });
     }
     if (p === '/api/orders' && req.method === 'POST') {
       const b = await body(req); const s = db.settings;
@@ -217,7 +217,7 @@ http.createServer(async (req, res) => {
       const c = cap.check(db.orders, s, b.pickupDate, n, today());
       if (!c.ok) return send(res, 409, { error: 'Päivä ei ole enää vapaana (' + c.reason + '). Valitse toinen päivä.' });
       const channel = b.channel === 'kotimyynti' ? 'kotimyynti' : 'verkko';
-      const agreed = resolveAgreedReturn(b.pickupDate, channel === 'kotimyynti' ? b.returnDate : null);
+      const agreed = resolveAgreedReturn(b.pickupDate, b.returnDate, b.returnTime);
       if (!agreed.ok) return send(res, 400, { error: agreed.error });
       const xtra = clampExtras(med, lg, b.extrasHair ?? b.hairRemoval, b.extrasOdor ?? b.odorRemoval);
       const hair = xtra.extrasHair, odor = xtra.extrasOdor, extrasSum = xtra.extrasSum;
@@ -229,7 +229,7 @@ http.createServer(async (req, res) => {
         postal: String(b.postal||'').slice(0,10), city: String(b.city||'Tampere').slice(0,60), notes: String(b.notes||'').slice(0,1000),
         medium: med, large: lg, carpetsTotal: n, extrasHair: hair, extrasOdor: odor, priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, total,
         vat: Math.round(total - total / (1 + s.vatPct / 100)) === 0 ? 0 : +(total - total / (1 + s.vatPct / 100)).toFixed(2),
-        payment: b.payment === 'heti' ? 'maksettu heti' : b.payment === 'lasku' ? 'lasku 14 vrk' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
+        payment: b.payment === 'heti' ? 'Korttimaksu heti (Zettle)' : b.payment === 'lasku' ? 'Lasku 14 vrk' : 'Korttimaksu palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40), returnTime: agreed.time,
         startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
         sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
         commission: b.channel === 'kotimyynti' ? +(cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) + 2 * (hair + odor)).toFixed(2) : 0,
