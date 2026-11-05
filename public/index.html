@@ -181,9 +181,10 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
             <div class="qty-wrap"><label for="medium">Keskikokoiset (1–2,4 m²) · 44 €</label><div class="qty"><button type="button" data-q="medium" data-s="-1" aria-label="Vähennä keskikokoisia">−</button><input id="medium" type="number" min="0" value="1" inputmode="numeric"><button type="button" data-q="medium" data-s="1" aria-label="Lisää keskikokoisia">+</button></div></div>
             <div class="qty-wrap"><label for="large">Isot (2,5–3,5 m²) · 54 €</label><div class="qty"><button type="button" data-q="large" data-s="-1" aria-label="Vähennä isoja">−</button><input id="large" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="large" data-s="1" aria-label="Lisää isoja">+</button></div></div>
           </div>
-          <div class="row" style="margin-top:12px">
-            <div class="qty-wrap"><label for="extrasHair">Karvanpoisto · +2 € / matto</label><div class="qty"><button type="button" data-q="extrasHair" data-s="-1" aria-label="Vähennä karvanpoistoja">−</button><input id="extrasHair" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="extrasHair" data-s="1" aria-label="Lisää karvanpoistoja">+</button></div></div>
-            <div class="qty-wrap"><label for="extrasOdor">Hajunpoisto · +2 € / matto</label><div class="qty"><button type="button" data-q="extrasOdor" data-s="-1" aria-label="Vähennä hajunpoistoja">−</button><input id="extrasOdor" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="extrasOdor" data-s="1" aria-label="Lisää hajunpoistoja">+</button></div></div>
+          <div style="margin-top:12px">
+            <p class="hint" style="margin-bottom:8px">Lisäpalvelut koskevat koko tilauksen kaikkia mattoja.</p>
+            <label class="chk"><input type="checkbox" id="extrasHair" value="1"> Karvanpoisto · 10 € (koko tilaus)</label>
+            <label class="chk"><input type="checkbox" id="extrasOdor" value="1"> Hajunpoisto · 10 € (koko tilaus)</label>
           </div>
         </fieldset>
         <fieldset>

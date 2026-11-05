@@ -17,8 +17,8 @@ const o=await api('/api/orders/'+id);
 const rows=[
   o.medium?`<tr><td>Keskikokoinen matto (1–2,4 m²)</td><td>${o.medium}</td><td>${eur(o.priceMedium)}</td><td>${eur(o.medium*o.priceMedium)}</td></tr>`:'',
   o.large?`<tr><td>Iso matto (2,5–3,5 m²)</td><td>${o.large}</td><td>${eur(o.priceLarge)}</td><td>${eur(o.large*o.priceLarge)}</td></tr>`:'',
-  (o.extrasHair||0)?`<tr><td>Karvanpoisto</td><td>${o.extrasHair}</td><td>${eur(2)}</td><td>${eur(2*o.extrasHair)}</td></tr>`:'',
-  (o.extrasOdor||0)?`<tr><td>Hajunpoisto</td><td>${o.extrasOdor}</td><td>${eur(2)}</td><td>${eur(2*o.extrasOdor)}</td></tr>`:''
+  (o.extrasHair||0)?`<tr><td>Karvanpoisto (koko tilaus)</td><td>1</td><td>${eur(10)}</td><td>${eur(10)}</td></tr>`:'',
+  (o.extrasOdor||0)?`<tr><td>Hajunpoisto (koko tilaus)</td><td>1</td><td>${eur(10)}</td><td>${eur(10)}</td></tr>`:''
 ].join('');
 $('#c').innerHTML=`<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><span class="logo" style="color:var(--navy)"><b>MATTO</b>RUNDI</span><h2>Tilausvahvistus ${o.number}</h2></div><div style="text-align:right;font-size:14px">${COMPANY.name}<br>Perustajat: ${COMPANY.founders}<br>Y-tunnus: ${COMPANY.ytunnus}<br>${COMPANY.address}<br>${COMPANY.email} · ${COMPANY.phone}</div></div>
 <div class="row"><div><h3>Asiakas</h3>${o.name}<br>${o.address}<br>${o.postal||''} ${o.city||''}<br>${o.phone}<br>${o.email||''}</div>

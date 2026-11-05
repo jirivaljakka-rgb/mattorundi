@@ -2,25 +2,22 @@
 let PICK = null, RET = null, S = { priceMedium: 44, priceLarge: 54, vatPct: 25.5 }, sigPad = null;
 function counts() { return { medium: Math.max(0, +$('#medium').value || 0), large: Math.max(0, +$('#large').value || 0) }; }
 function extras() {
-  const max = counts().medium + counts().large;
   const hairEl = $('#extrasHair'), odorEl = $('#extrasOdor');
-  let hair = hairEl ? Math.max(0, +hairEl.value || 0) : 0;
-  let odor = odorEl ? Math.max(0, +odorEl.value || 0) : 0;
-  if (hair > max) { hair = max; if (hairEl) hairEl.value = hair; }
-  if (odor > max) { odor = max; if (odorEl) odorEl.value = odor; }
+  const hair = hairEl ? (hairEl.type === 'checkbox' ? (hairEl.checked ? 1 : 0) : Math.max(0, Math.min(1, +hairEl.value || 0))) : 0;
+  const odor = odorEl ? (odorEl.type === 'checkbox' ? (odorEl.checked ? 1 : 0) : Math.max(0, Math.min(1, +odorEl.value || 0))) : 0;
   return { extrasHair: hair, extrasOdor: odor };
 }
 function updateSum() {
   const c = counts(), x = extras(), n = c.medium + c.large;
-  const extrasSum = 2 * (x.extrasHair + x.extrasOdor);
+  const extrasSum = 10 * (x.extrasHair + x.extrasOdor);
   const t = c.medium * S.priceMedium + c.large * S.priceLarge + extrasSum;
   const vat = t - t / (1 + S.vatPct / 100);
   let extraLine = '';
   if (x.extrasHair || x.extrasOdor) {
     const parts = [];
-    if (x.extrasHair) parts.push(`karvanpoisto ${x.extrasHair} × 2 €`);
-    if (x.extrasOdor) parts.push(`hajunpoisto ${x.extrasOdor} × 2 €`);
-    extraLine = `<br>Lisäpalvelut: ${parts.join(' + ')} = ${eur(extrasSum)}`;
+    if (x.extrasHair) parts.push('karvanpoisto 10 €');
+    if (x.extrasOdor) parts.push('hajunpoisto 10 €');
+    extraLine = `<br>Lisäpalvelut (koko tilaus): ${parts.join(' + ')} = ${eur(extrasSum)}`;
   }
   $('#sum').innerHTML = `${c.medium} × ${S.priceMedium} € + ${c.large} × ${S.priceLarge} € = <b>${eur(t - extrasSum)}</b>${extraLine}<br><b>Yhteensä ${eur(t)}</b> <small>(sis. ALV ${String(S.vatPct).replace('.', ',')} %: ${eur(vat)})</small><br>` +
    (PICK ? `Nouto: <b style="font-size:16px">${fmtD(PICK)}</b> · arvioitu palautus: <b style="font-size:16px">${fmtD(RET)}</b>` : `<span class="err">Valitse noutopäivä kalenterista.</span>`);
@@ -37,7 +34,7 @@ async function initBooking(initChannel) {
     else updateSum();
   });
   ['medium', 'large'].forEach(id => { const el = $('#' + id); if (el) el.oninput = () => { PICK = null; refreshCal(); }; });
-  ['extrasHair', 'extrasOdor'].forEach(id => { const el = $('#' + id); if (el) el.oninput = () => updateSum(); });
+  ['extrasHair', 'extrasOdor'].forEach(id => { const el = $('#' + id); if (el) el.onchange = el.oninput = () => updateSum(); });
   refreshCal();
   $('#f').onsubmit = async e => { e.preventDefault(); const c = counts(), x = extras(); const msg = $('#msg');
     const sellerEl = $('#sellerCode');
