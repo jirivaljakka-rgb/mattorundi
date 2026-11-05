@@ -17,10 +17,9 @@ async function renderCalendar(el, n, onPick, selected) {
   let h = '<div class="cal">' + ['ma','ti','ke','to','pe','la','su'].map(x => `<div class="h">${x}</div>`).join('');
   for (const d of shown) { const dd = new Date(d.date + 'T00:00:00');
     const lbl = `${dd.getDate()}.${dd.getMonth() + 1}.`;
-    const back = addDaysISO(d.date, 4);
-    h += d.ok ? `<button type="button" class="free ${selected === d.date ? 'sel' : ''}" data-d="${d.date}" data-r="${back}" title="Arvioitu palautus ${fmtD(back)} (4 pv noudosta)">${lbl}<small>vapaa</small></button>`
+    h += d.ok ? `<button type="button" class="free ${selected === d.date ? 'sel' : ''}" data-d="${d.date}" title="Vapaa noutopäivä">${lbl}<small>vapaa</small></button>`
       : `<button type="button" class="closed" disabled title="${d.reason}">${lbl}<small>${NON_DAY.includes(d.reason) ? '' : 'täynnä'}</small></button>`; }
-  el.innerHTML = h + '</div><div class="legend">Vihreä = vapaa noutopäivä · arvioitu palautus 4 päivää noudosta (viimeistään 6) · harmaa = suljettu / täynnä. ' + (nextFree ? `<b>Seuraava vapaa päivä ${n} matolle: ${fmtD(nextFree)}</b>` : 'Ei vapaita noutopäiviä juuri nyt – soita 040 41 08581, niin sovitaan.') + '</div>';
+  el.innerHTML = h + '</div><div class="legend">Vihreä = vapaa noutopäivä · palautus 17. tai 18.11.2026 klo 9–17 · harmaa = suljettu / täynnä. ' + (nextFree ? `<b>Seuraava vapaa päivä ${n} matolle: ${fmtD(nextFree)}</b>` : 'Ei vapaita noutopäiviä juuri nyt – soita 040 41 08581, niin sovitaan.') + '</div>';
   el.querySelectorAll('button.free').forEach(b => b.onclick = () => { el.querySelectorAll('.sel').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); onPick(b.dataset.d, b.dataset.r); });
   if (selected && !days.find(d => d.date === selected && d.ok)) onPick(null, null);
   return nextFree;

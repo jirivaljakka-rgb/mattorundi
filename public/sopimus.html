@@ -60,29 +60,24 @@
       </div>
       <label class="chk"><input type="checkbox" id="extrasOdor" value="1"> Hajunpoisto · 10 € (koskee kaikkia mattoja)</label>
     </div>
-    <label>Ehdotettu noutopäivä *</label><div id="cal" aria-live="polite"></div>
-    <label for="pickupTime">Noutoaika</label><input id="pickupTime" placeholder="esim. klo 16–18">
-    <label for="returnDate">Arvioitu palautuspäivä</label>
-    <select id="returnDate"></select>
-    <p class="hint">Oletus 4 pv noudosta. Vaihda jos asiakas ei ole kotona (max 6 pv).</p>
-    <div class="sum" id="sum" aria-live="polite"></div>
-    <label>Maksutapa</label>
-    <div class="pay-choice" role="radiogroup">
-      <label><input type="radio" name="payment" value="heti"> Maksaa heti (kortti / MobilePay)</label>
-      <label><input type="radio" name="payment" value="palautus" checked> Maksu palautuksen yhteydessä</label>
-      <label><input type="radio" name="payment" value="lasku"> Lasku 14 vrk</label>
+    <label id="pay-label">Maksutapa</label>
+    <div class="pay-choice" role="radiogroup" aria-labelledby="pay-label">
+      <label><input type="radio" name="payment" value="heti"> <span>Korttimaksu heti (Zettle)</span></label>
+      <label><input type="radio" name="payment" value="palautus" checked> <span>Korttimaksu palautuksen yhteydessä</span></label>
+      <label><input type="radio" name="payment" value="lasku"> <span>Lasku 14 vrk</span></label>
     </div>
+    <label>Ehdotettu noutopäivä *</label><div id="cal" aria-live="polite"></div>
+    <label for="pickupTime">Noutoaika</label><input id="pickupTime" placeholder="esim. klo 10–12">
+    <label for="returnDate">Palautuspäivä *</label>
+    <select id="returnDate" required></select>
+    <label for="returnTime">Palautusaika (klo 9–17) *</label>
+    <select id="returnTime" required></select>
+    <p class="hint">Palautus vain 17.11. tai 18.11.2026. Valitse päivä ja 2 tunnin aika klo 9–17.</p>
+    <div class="sum" id="sum" aria-live="polite"></div>
   </fieldset>
 
   <fieldset id="fs-confirm" data-needs-check>
-    <legend><span class="n" aria-hidden="true">4</span>Kuva ja vahvistus</legend>
-    <label for="photo">Kuva allekirjoitetusta paperisopimuksesta (valinnainen)</label>
-    <div class="drop">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
-      <span>Ota kuva tai valitse tiedosto<small>Kuva pienennetään automaattisesti ennen lähetystä.</small></span>
-      <input id="photo" type="file" accept="image/*" capture="environment">
-    </div>
-    <img id="prev" alt="Esikatselu sopimuskuvasta" style="display:none">
+    <legend><span class="n" aria-hidden="true">4</span>Vahvistus</legend>
     <label for="notes">Huomiot</label><textarea id="notes" rows="2"></textarea>
     <label class="chk"><input type="checkbox" id="acceptTerms"> Asiakas on allekirjoittanut paperisopimuksen ja saanut oman kappaleen sekä peruutuslomakkeen. *</label>
     <label class="chk"><input type="checkbox" id="marketingConsent"> Saa muistuttaa asiakasta seuraavasta pesusta sähköpostilla</label>
@@ -93,6 +88,6 @@
 </div></section>
 </main>
 <script src="common.js"></script><script src="terms.js"></script><script src="booking.js"></script>
-<script>$('#photo').onchange=async e=>{const f=e.target.files[0];window.PHOTO=f?await readPhoto(f):null;$('#prev').src=window.PHOTO||'';$('#prev').style.display=f?'block':'none'};initBooking('kotimyynti')</script>
+<script>initBooking('kotimyynti')</script>
 </body>
 </html>

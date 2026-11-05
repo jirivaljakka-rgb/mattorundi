@@ -74,7 +74,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
       </div>
       <div class="hero-badge" data-badge>
         <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-        <div><b>4 päivää</b><span>arvioitu palautus noudosta, viimeistään 6</span></div>
+        <div><b>17.–18.11.</b><span>palautus klo 9–17</span></div>
       </div>
     </div>
   </div>
@@ -109,7 +109,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
         <div class="num"><em>2</em>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5"/></svg></div>
         <h3>Pesemme</h3>
-        <p>Pesumenetelmä valitaan maton materiaalin mukaan. Arvioitu palautus on 4 päivää noudosta, viimeistään 6 päivää.</p>
+        <p>Matot pestään käsin. Yli 3,5 m² mattoja ei oteta vastaan. Palautus tällä jaksolla on 17. tai 18.11. klo 9–17.</p>
       </div>
       <div class="step" data-step>
         <div class="num"><em>3</em>
@@ -149,7 +149,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
           <ul><li>esim. 140 × 200 cm tai 160 × 200 cm</li></ul>
         </div>
       </div>
-      <p class="price-note" data-reveal>Hinnat sis. ALV 25,5 %. Yli 3,5 m² ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen.</p>
+      <p class="price-note" data-reveal>Hinnat sis. ALV 25,5 %. Yli 3,5 m² mattoja ei oteta vastaan.</p>
     </div>
     <div class="media-tall" data-reveal>
       <img src="img/pickup.jpg" width="1152" height="864" alt="Mattorundi-kaveri kättelee asiakasta ovella, toinen lastaa mattoa autoon" loading="lazy" decoding="async">
@@ -162,7 +162,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
   <div class="wrap">
     <p class="eyebrow" data-reveal>Varaa nouto</p>
     <h2 data-reveal>Valitse matot ja noutopäivä</h2>
-    <p class="lead" data-reveal>Kerro mattojen määrä – kalenteri näyttää päivät, joille mahtuu, ja arvioidun palautuspäivän.</p>
+    <p class="lead" data-reveal>Kerro mattojen määrä ja valitse noutopäivä. Palautus on 17. tai 18.11. klo 9–17.</p>
     <div class="booking-grid">
       <form id="f" class="card">
         <div class="pickup-note" id="pickupNote" hidden>
@@ -192,8 +192,12 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
         </fieldset>
         <fieldset>
           <legend><span class="n" aria-hidden="true">2</span>Noutopäivä</legend>
-          <p class="hint">Valitse vihreä päivä. Arvioitu palautus on 4 päivää noudosta ja viimeistään 6 päivää noudosta.</p>
+          <p class="hint">Valitse vihreä noutopäivä. Palautus on 17.11. tai 18.11.2026 klo 9–17.</p>
           <div id="cal" aria-live="polite"></div>
+          <label for="returnDate">Palautuspäivä</label>
+          <select id="returnDate" required></select>
+          <label for="returnTime">Palautusaika (klo 9–17)</label>
+          <select id="returnTime" required></select>
           <div class="sum" id="sum" aria-live="polite"></div>
         </fieldset>
         <fieldset>
@@ -237,7 +241,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
       </div>
       <div class="card benefit" data-reveal-card>
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></svg></div>
-        <h3>Materiaalin mukainen pesu</h3><p>Pesumenetelmä valitaan maton mukaan. Jos mattoa ei voi pestä turvallisesti, kerromme siitä eikä siitä veloiteta.</p>
+        <h3>Käsinpesu</h3><p>Matot pestään käsin. Jos mattoa ei voi pestä turvallisesti, kerromme siitä eikä siitä veloiteta.</p>
       </div>
       <div class="card benefit" data-reveal-card>
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/><path d="M12 7v5l3 2"/></svg></div>
@@ -265,10 +269,10 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
     <p class="eyebrow" data-reveal>Usein kysyttyä</p>
     <h2 data-reveal>Kysymyksiä ja vastauksia</h2>
     <div class="faq" data-reveal>
-      <details><summary>Kauanko pesu kestää?</summary><div class="a"><p>Arvioitu palautus on 4 päivää noudosta ja viimeistään 6 päivää noudosta. Kalenteri näyttää palautuspäivän jo varausta tehdessä. Kotimyynnissä päivän voi sopia välille 1–6 päivää noudosta, jos et ole kotona oletuspäivänä.</p></div></details>
-      <details><summary>Milloin ja miten maksan?</summary><div class="a"><p>Maksu suoritetaan pääsääntöisesti mattojen palautuksen yhteydessä. Varausta tehdessä ei makseta mitään.</p></div></details>
-      <details><summary>Mitä jos mattoani ei voi pestä?</summary><div class="a"><p>Pesumenetelmä valitaan maton materiaalin mukaan, ja tarvittaessa tehdään värinpitävyystesti. Jos mattoa ei voi pestä turvallisesti, ilmoitamme siitä ennen pesua eikä siitä veloiteta.</p></div></details>
-      <details><summary>Entä isot tai erikoismatot?</summary><div class="a"><p>Yli 3,5 m² matoista ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen ennen tilausta. Soita <a href="tel:+358404108581">040 41 08581</a> tai kirjoita <a href="mailto:mattorundi@gmail.com">mattorundi@gmail.com</a>.</p></div></details>
+      <details><summary>Kauanko pesu kestää?</summary><div class="a"><p>Tällä jaksolla palautus on 17.11. tai 18.11.2026 klo 9–17. Valitset päivän ja kellonajan varauksen yhteydessä. Nouto on 11.–14.11.2026.</p></div></details>
+      <details><summary>Milloin ja miten maksan?</summary><div class="a"><p>Verkkovarauksessa maksu on korttimaksu mattojen palautuksen yhteydessä. Kotimyynnissä voi maksaa myös heti Zettlellä tai laskulla (14 vrk).</p></div></details>
+      <details><summary>Mitä jos mattoani ei voi pestä?</summary><div class="a"><p>Matot pestään käsin, ja tarvittaessa tehdään värinpitävyystesti. Jos mattoa ei voi pestä turvallisesti, ilmoitamme siitä ennen pesua eikä siitä veloiteta.</p></div></details>
+      <details><summary>Entä isot matot?</summary><div class="a"><p>Yli 3,5 m² mattoja ei oteta vastaan. Palvelu kattaa keskikokoiset (1–2,4 m²) ja isot (2,5–3,5 m²) matot.</p></div></details>
       <details><summary>Voinko peruuttaa tilauksen?</summary><div class="a"><p>Kyllä. Sinulla on 14 päivän peruuttamisoikeus, ja peruutus ennen noutoa on maksuton. Voit ilmoittaa peruutuksesta sähköpostilla, puhelimella tai <a href="/peruutuslomake">peruutuslomakkeella</a>.</p></div></details>
       <details><summary>Millä alueella toimitte?</summary><div class="a"><p>Tampereella. Noudot keskitetään samalle reitille.</p></div></details>
     </div>

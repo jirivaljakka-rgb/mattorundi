@@ -28,22 +28,32 @@ function extras() {
   const odor = odorEl ? (odorEl.type === 'checkbox' ? (odorEl.checked ? 1 : 0) : Math.max(0, Math.min(1, Math.floor(Number(odorEl.value)) || 0))) : 0;
   return { extrasHair: hair, extrasOdor: odor };
 }
-let returnFor = null;
+const FALLBACK_RETURN_DAYS = ['2026-11-17', '2026-11-18'];
+const FALLBACK_RETURN_TIMES = ['9-11', '11-13', '13-15', '15-17'];
+function returnDays() { return (Array.isArray(S.returnDays) && S.returnDays.length) ? S.returnDays : FALLBACK_RETURN_DAYS; }
+function returnTimes() { return (Array.isArray(S.returnTimes) && S.returnTimes.length) ? S.returnTimes : FALLBACK_RETURN_TIMES; }
+let returnFilled = false;
 function syncReturnChoices() {
   const el = $('#returnDate');
-  if (!el) return;
-  if (!PICK) { el.innerHTML = '<option value="">Valitse ensin noutopäivä</option>'; returnFor = null; return; }
-  if (returnFor === PICK && el.value) return;
-  returnFor = PICK;
-  const opts = [];
-  for (let i = 1; i <= 6; i++) { const d = addDaysISO(PICK, i); opts.push('<option value="' + d + '">' + fmtD(d) + (i === 4 ? ' (oletus, 4 pv)' : '') + '</option>'); }
-  el.innerHTML = opts.join('');
-  el.value = addDaysISO(PICK, 4);
+  if (!el || returnFilled) return;
+  returnFilled = true;
+  const days = returnDays();
+  el.innerHTML = days.map(d => '<option value="' + d + '">' + fmtD(d) + '</option>').join('');
+  el.value = days[0];
+  const time = $('#returnTime');
+  if (!time) return;
+  const slots = returnTimes();
+  time.innerHTML = slots.map(t => '<option value="' + t + '">klo ' + t + '</option>').join('');
+  time.value = slots[0];
 }
 function promisedReturn() {
   const el = $('#returnDate');
   if (el && /^\d{4}-\d{2}-\d{2}$/.test(el.value || '')) return el.value;
-  return PICK ? addDaysISO(PICK, 4) : (RET || '');
+  return returnDays()[0] || '';
+}
+function promisedReturnTime() {
+  const el = $('#returnTime');
+  return el && el.value ? el.value : '';
 }
 function updateSum() {
   const c = counts(), x = extras();
@@ -59,14 +69,16 @@ function updateSum() {
     extraLine = `<br>Lisäpalvelut: ${parts.join(' + ')} = ${eur(extrasSum)}`;
   }
   const back = promisedReturn();
+  const backTime = promisedReturnTime();
+  const backLabel = back ? fmtD(back) + (backTime ? ' klo ' + backTime : '') : '';
   $('#sum').innerHTML = `${c.medium} × ${S.priceMedium} € + ${c.large} × ${S.priceLarge} € = <b>${eur(t - extrasSum)}</b>${extraLine}<br><b>Yhteensä ${eur(t)}</b> <small>(sis. ALV ${String(S.vatPct).replace('.', ',')} %: ${eur(vat)})</small><br>` +
-   (PICK ? `Nouto: <b style="font-size:16px">${fmtD(PICK)}</b> · arvioitu palautus: <b style="font-size:16px">${fmtD(back)}</b>` : `<span class="err">Valitse noutopäivä kalenterista.</span>`);
+   (PICK ? `Nouto: <b style="font-size:16px">${fmtD(PICK)}</b> · palautus: <b style="font-size:16px">${backLabel}</b>` : `<span class="err">Valitse noutopäivä kalenterista.</span>`);
   const sel = document.querySelector('#cal button.sel');
-  if (sel && back) sel.title = 'Arvioitu palautus ' + fmtD(back);
+  if (sel && backLabel) sel.title = 'Palautus ' + backLabel;
 }
 let calTimer;
 function refreshCal() { clearTimeout(calTimer); calTimer = setTimeout(async () => { const c = counts(), n = Math.max(1, c.medium + c.large);
-  await renderCalendar($('#cal'), n, (d, r) => { PICK = d; RET = r; updateSum(); }, PICK); updateSum(); }, 200); }
+  await renderCalendar($('#cal'), n, (d) => { PICK = d; updateSum(); }, PICK); updateSum(); }, 200); }
 async function initBooking(initChannel) {
   S = await api('/api/public-settings'); $('#terms').innerHTML = TERMS_HTML;
   document.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
@@ -74,23 +86,24 @@ async function initBooking(initChannel) {
     let next = Math.max(0, (+i.value || 0) + (+b.dataset.s));
     if (b.dataset.q === 'extrasHair') next = Math.min(next, carpetCount());
     i.value = next;
-    if (b.dataset.q === 'medium' || b.dataset.q === 'large') { clampHairInput(); PICK = null; returnFor = null; refreshCal(); }
+    if (b.dataset.q === 'medium' || b.dataset.q === 'large') { clampHairInput(); PICK = null; refreshCal(); }
     else updateSum();
   });
-  ['medium', 'large'].forEach(id => { const el = $('#' + id); if (el) el.oninput = () => { clampHairInput(); PICK = null; returnFor = null; refreshCal(); }; });
+  ['medium', 'large'].forEach(id => { const el = $('#' + id); if (el) el.oninput = () => { clampHairInput(); PICK = null; refreshCal(); }; });
   ['extrasHair', 'extrasOdor'].forEach(id => { const el = $('#' + id); if (el) el.onchange = el.oninput = () => updateSum(); });
   const retEl = $('#returnDate'); if (retEl) retEl.onchange = () => updateSum();
+  const retTimeEl = $('#returnTime'); if (retTimeEl) retTimeEl.onchange = () => updateSum();
+  syncReturnChoices();
   refreshCal();
   $('#f').onsubmit = async e => { e.preventDefault(); const c = counts(), x = extras(); const msg = $('#msg');
     const sellerEl = $('#sellerCode');
     const sellerVal = sellerEl ? sellerEl.value.trim() : '';
     const channel = sellerVal ? 'kotimyynti' : (initChannel || 'verkko');
     const b = { channel, ...c, ...x, pickupDate: PICK };
-    for (const k of ['name','phone','email','address','postal','city','notes','pickupTime','sellerCode','returnDate']) { const el = $('#' + k); if (el) b[k] = el.value.trim(); }
+    for (const k of ['name','phone','email','address','postal','city','notes','pickupTime','sellerCode','returnDate','returnTime']) { const el = $('#' + k); if (el) b[k] = el.value.trim(); }
     for (const k of ['acceptTerms','startEarly','marketingConsent']) { const el = $('#' + k); b[k] = el ? !!el.checked : (k === 'acceptTerms'); }
     if (!b.acceptTerms && channel === 'verkko') b.acceptTerms = true; // piilotettu hyväksyntä verkkovarauksessa
     const pay = document.querySelector('input[name=payment]:checked'); b.payment = pay ? pay.value : 'palautus';
-    if (channel === 'kotimyynti' && window.PHOTO) b.photo = window.PHOTO;
     if (!PICK) { msg.innerHTML = '<span class="err">Valitse noutopäivä.</span>'; return; }
     if (!b.acceptTerms) { msg.innerHTML = '<span class="err">Hyväksy tilausehdot / vahvista paperisopimus.</span>'; return; }
     $('#go').disabled = true; msg.textContent = 'Tallennetaan…';
@@ -106,6 +119,3 @@ function initSignature(canvas) { const ctx = canvas.getContext('2d'); const pad 
   canvas.addEventListener('pointerup', () => draw = false);
   pad.clear = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); pad.empty = true; };
   return pad; }
-
-// Pienentää valokuvan (max 1800 px, JPEG) ennen lähetystä
-function readPhoto(file) { return new Promise((ok, no) => { const img = new Image(); img.onload = () => { const k = Math.min(1, 1800 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL('image/jpeg', 0.82)); }; img.onerror = no; img.src = URL.createObjectURL(file); }); }

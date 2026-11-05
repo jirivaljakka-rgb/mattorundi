@@ -299,7 +299,7 @@ ul.check li:before{content:"";position:absolute;left:0;top:4px;width:20px;height
 .pickup-note b{color:var(--color-primary)}
 .pickup-note svg{width:22px;height:22px;flex:none;color:var(--color-primary);margin-top:1px}
 form.card{padding:clamp(22px,3.6vw,40px)}
-fieldset{border:0;margin:0 0 6px;padding:0 0 26px;min-width:0}
+fieldset{border:0;margin:0 0 6px;padding:0 0 26px;min-width:0;overflow:visible}
 fieldset+fieldset{border-top:1px solid var(--color-border);padding-top:26px}
 legend{float:left;width:100%;display:flex;align-items:center;gap:12px;padding:0;margin:0 0 8px;font-family:var(--font-head);font-weight:var(--head-weight);letter-spacing:-.015em;font-size:23px;color:var(--color-primary)}
 legend+*{clear:both}
@@ -307,6 +307,7 @@ legend .n{width:30px;height:30px;border-radius:50%;background:var(--badge-bg);co
 .hint{font-size:14px;color:var(--color-text-muted);margin:4px 0 0}
 label{display:block;font-weight:700;margin:16px 0 6px;font-size:15px;color:var(--color-text)}
 input,select,textarea{width:100%;min-height:50px;padding:12px 14px;border:1.5px solid var(--input-border);border-radius:var(--input-radius);font-size:17px;font-family:inherit;color:var(--color-text);background:var(--input-bg);transition:border-color .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+input[type=radio],input[type=checkbox]{width:24px;height:24px;min-height:24px;padding:0;flex:none;accent-color:var(--color-primary)}
 textarea{min-height:90px;resize:vertical}
 input:hover,select:hover,textarea:hover{border-color:var(--color-text-muted)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-primary-2);box-shadow:0 0 0 4px color-mix(in srgb,var(--color-primary-2) 20%,transparent)}
@@ -315,6 +316,10 @@ input:user-invalid,textarea:user-invalid{border-color:var(--color-danger)}
 .row3{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:16px}
 .chk{display:flex;gap:12px;align-items:flex-start;font-weight:500;margin:14px 0;line-height:1.5;cursor:pointer}
 .chk input{width:24px;height:24px;min-height:0;flex:none;margin:1px 0 0;accent-color:var(--color-primary);cursor:pointer}
+.pay-choice{display:grid;gap:10px;margin:4px 0 12px}
+.pay-choice label{display:flex;align-items:center;gap:14px;margin:0;padding:14px 16px;min-height:56px;border:2px solid var(--input-border);border-radius:14px;background:var(--color-surface);color:var(--color-text);font-weight:800;font-size:17px;line-height:1.3;cursor:pointer}
+.pay-choice label:has(input:checked){border-color:var(--color-primary);background:var(--color-accent-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--color-accent) 70%,transparent)}
+.pay-choice input{width:26px;height:26px;min-width:26px;min-height:26px;margin:0;padding:0;flex:none;accent-color:var(--color-primary)}
 .qty-wrap{background:var(--color-bg);border:1px solid var(--color-border);border-radius:14px;padding:4px 16px 16px}
 .qty{display:flex;align-items:center;gap:10px}
 .qty button{width:48px;height:48px;border-radius:12px;border:1.5px solid var(--input-border);background:var(--input-bg);font-size:24px;line-height:1;color:var(--color-primary);cursor:pointer;font-family:inherit;transition:background .2s,border-color .2s,transform .15s}

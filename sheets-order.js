@@ -73,6 +73,7 @@ function orderFromSheet(raw) {
     payment: String(src.payment || ''),
     pickupDate: sheetDay(src.pickupDate),
     pickupTime: String(src.pickupTime || ''),
+    returnTime: String(src.returnTime || '').slice(0, 20),
     sellerCode: src.sellerCode ? String(src.sellerCode) : null,
     sellerName: src.sellerName ? String(src.sellerName) : null,
     commission: num(src.commission, 0),

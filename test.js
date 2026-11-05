@@ -53,12 +53,16 @@ const prHair = sellerCommission(2, 1, 3, 1, jani); // 16*2 + 20 + 2*3 + 2 = 60
 console.log('Provisio JANI 2 keski + 1 iso + karva 3 + haju:', prHair);
 if (prHair !== 60) { console.error('VIRHE: provisio +2 per karva ja haju'); process.exit(1); }
 const retDef = resolveAgreedReturn('2026-11-11', '');
-const retMax = resolveAgreedReturn('2026-11-11', '2026-11-17');
+const ret17 = resolveAgreedReturn('2026-11-11', '2026-11-17', '9-11');
+const ret18 = resolveAgreedReturn('2026-11-11', '2026-11-18', '15-17');
 const retSame = resolveAgreedReturn('2026-11-11', '2026-11-11');
-const retLate = resolveAgreedReturn('2026-11-11', '2026-11-18');
-if (!retDef.ok || retDef.date !== '2026-11-15') { console.error('VIRHE: palautusoletus +4', retDef); process.exit(1); }
-if (!retMax.ok || retMax.date !== '2026-11-17') { console.error('VIRHE: palautus max +6', retMax); process.exit(1); }
-if (retSame.ok || retLate.ok) { console.error('VIRHE: palautus ikkunan ulkopuolella meni läpi'); process.exit(1); }
+const retOld = resolveAgreedReturn('2026-11-11', '2026-11-15');
+const retLate = resolveAgreedReturn('2026-11-11', '2026-11-22');
+const retBadTime = resolveAgreedReturn('2026-11-11', '2026-11-17', '18-20');
+if (!retDef.ok || retDef.date !== '2026-11-17' || retDef.time !== '') { console.error('VIRHE: palautusoletus 17.11.', retDef); process.exit(1); }
+if (!ret17.ok || ret17.date !== '2026-11-17' || ret17.time !== '9-11') { console.error('VIRHE: palautus 17.11. klo 9-11', ret17); process.exit(1); }
+if (!ret18.ok || ret18.date !== '2026-11-18' || ret18.time !== '15-17') { console.error('VIRHE: palautus 18.11. klo 15-17', ret18); process.exit(1); }
+if (retSame.ok || retOld.ok || retLate.ok || retBadTime.ok) { console.error('VIRHE: palautus ikkunan ulkopuolella meni läpi'); process.exit(1); }
 console.log('Extras- ja palautustestit OK');
 
 // Asiakasviesti: ei /vahvistus-linkkiä, PDF-HTML ja rakenteinen tilaus ilman provisiota
@@ -67,43 +71,46 @@ const sample = {
   name: 'Maija <Test>', phone: '0401234567', email: 'maija@example.com', address: 'Testikatu 1', postal: '33100', city: 'Tampere',
   notes: 'Ovikoodi 1234 & raput', medium: 1, large: 1, extrasHair: 1, extrasOdor: 0,
   priceMedium: 44, priceLarge: 54, vatPct: 25.5, total: 108, vat: 21.94,
-  payment: 'palautuksen yhteydessä', pickupDate: '2026-11-11', pickupTime: '9–11',
-  returnDate: '2026-11-16', commission: 99, sellerCode: 'JANI669', sellerName: 'Jani', signature: null, termsVersion: '2026-11'
+  payment: 'Korttimaksu palautuksen yhteydessä', pickupDate: '2026-11-11', pickupTime: '9–11',
+  returnDate: '2026-11-17', returnTime: '9-11', commission: 99, sellerCode: 'JANI669', sellerName: 'Jani', signature: null, termsVersion: '2026-11'
 };
 const mail = buildCustomerEmail(sample);
 if (typeof mail.body !== 'string' || mail.body.trim().length < 80) { console.error('VIRHE: body liian lyhyt', mail.body && mail.body.length); process.exit(1); }
 if (!/kiitos/i.test(mail.body) || !mail.body.includes('PDF')) { console.error('VIRHE: body ilman kiitos/PDF'); process.exit(1); }
 if (!mail.body.includes('Sopimus: 5.11.2026 klo 10.15') || !mail.body.includes('Olet tehnyt tämän tilauksen 5.11.2026 klo 10.15')) { console.error('VIRHE: sopimuspäivä/kellonaika puuttuu', mail.body); process.exit(1); }
 if (/https?:\/\/|\/vahvistus|onrender\.com/i.test(mail.body) || /https?:\/\/|\/vahvistus|onrender\.com/i.test(mail.htmlBody || '')) { console.error('VIRHE: sähköpostissa on URL'); process.exit(1); }
-for (const bit of ['kiitos, että valitsit', 'PDF', 'Tilausvahvistus ja ehdot', '11.11.2026 9–11', '16.11.2026', '108,00 €', 'Maija <Test>', 'Arvioitu palautus', 'Nouto:', 'Summa:']) {
+for (const bit of ['kiitos, että valitsit', 'PDF', 'Tilausvahvistus ja ehdot', '11.11.2026 9–11', '17.11.2026 klo 9-11', '108,00 €', 'Maija <Test>', 'Palautus:', 'Nouto:', 'Summa:']) {
   if (!mail.body.includes(bit)) { console.error('VIRHE: tekstistä puuttuu', bit); process.exit(1); }
 }
 if (!mail.htmlBody || mail.htmlBody.trim().length < 80 || /<img/i.test(mail.htmlBody)) { console.error('VIRHE: htmlBody puuttuu, on tyhjä tai sisältää kuvan'); process.exit(1); }
-for (const bit of ['kiitos, että valitsit', 'PDF', 'Tilausvahvistus ja ehdot', 'Sopimus', '5.11.2026 klo 10.15', 'Nouto', 'Arvioitu palautus', 'Summa', '11.11.2026', '16.11.2026', '108,00 €', 'Maija &lt;Test&gt;', 'Ystävällisin terveisin']) {
+for (const bit of ['kiitos, että valitsit', 'PDF', 'Tilausvahvistus ja ehdot', 'Sopimus', '5.11.2026 klo 10.15', 'Nouto', 'Palautus', 'Summa', '11.11.2026', '17.11.2026 klo 9-11', '108,00 €', 'Maija &lt;Test&gt;', 'Ystävällisin terveisin']) {
   if (!mail.htmlBody.includes(bit)) { console.error('VIRHE: htmlBody:sta puuttuu', bit); process.exit(1); }
 }
 try { assertOutgoingEmail('', mail.htmlBody); console.error('VIRHE: tyhjä body meni läpi'); process.exit(1); } catch (e) { if (!/tyhj/i.test(e.message)) { console.error('VIRHE: tyhjän bodyn virhe', e.message); process.exit(1); } }
 try { assertOutgoingEmail('   ', '   '); console.error('VIRHE: whitespace-body meni läpi'); process.exit(1); } catch (e) { if (!/tyhj/i.test(e.message)) { console.error('VIRHE: whitespace-virhe', e.message); process.exit(1); } }
 if (mail.body.includes('koko tilaus') || mail.htmlBody.includes('koko tilaus') || mail.pdfHtml.includes('koko tilaus')) { console.error('VIRHE: vanha "koko tilaus" -teksti'); process.exit(1); }
 if (mail.pdfFilename !== 'Mattorundi-tilausvahvistus-MR-2026-0007.pdf') { console.error('VIRHE: pdf-tiedostonimi', mail.pdfFilename); process.exit(1); }
-for (const bit of ['Valaja Team Osk', '3529504-8', 'Kuntokatu 3 C', 'mattorundi@gmail.com', '040 41 08581', 'Maija &lt;Test&gt;', 'Testikatu 1', '11.11.2026', '16.11.2026', 'Keskikokoinen matto', 'Iso matto', 'Karvanpoisto', '108,00 €', 'ALV', 'palautuksen yhteydessä', 'Peruuttamisoikeus', 'Tilausehdot', 'Peruutuslomake', 'Ovikoodi 1234 &amp; raput']) {
+for (const bit of ['Valaja Team Osk', '3529504-8', 'Kuntokatu 3 C', 'mattorundi@gmail.com', '040 41 08581', 'Maija &lt;Test&gt;', 'Testikatu 1', '11.11.2026', '17.11.2026 klo 9-11', 'Keskikokoinen matto', 'Iso matto', 'Karvanpoisto', '108,00 €', 'ALV', 'palautuksen yhteydessä', 'Peruuttamisoikeus', 'Tilausehdot', 'Peruutuslomake', 'Ovikoodi 1234 &amp; raput', 'käsinpesu', 'ei oteta vastaan', 'Zettle', 'Pirkanmaan käräjäoikeudessa', '18.11.2026']) {
   if (!mail.pdfHtml.includes(bit)) { console.error('VIRHE: pdfHtml:sta puuttuu', bit); process.exit(1); }
 }
 for (const bad of ['Kopioi linkki', 'Lähetä sähköpostilla', 'Tulosta / tallenna', '/vahvistus', 'Provisio', 'JANI669']) {
   if (mail.pdfHtml.includes(bad)) { console.error('VIRHE: pdfHtml sisältää myyjän näkymän', bad); process.exit(1); }
 }
-if ('commission' in mail.order || mail.order.returnDate !== '2026-11-16' || mail.order.lines.length !== 3) {
+if ('commission' in mail.order || mail.order.returnDate !== '2026-11-17' || mail.order.returnTime !== '9-11' || mail.order.lines.length !== 3) {
   console.error('VIRHE: order-kentät', mail.order); process.exit(1);
 }
 if (mail.order.cancelBy !== '2026-11-19') { console.error('VIRHE: peruutuspäivä', mail.order.cancelBy); process.exit(1); }
 const hairLine = mail.order.lines.find(l => l.name === 'Karvanpoisto (per matto)');
 if (!hairLine || hairLine.qty !== 1 || hairLine.unitPrice !== 10 || hairLine.sum !== 10) { console.error('VIRHE: PDF-rivi karvanpoisto', hairLine); process.exit(1); }
-const many = buildCustomerEmail({ ...sample, medium: 2, large: 3, extrasHair: 5, extrasOdor: 1, total: 310, agreedReturnDate: '2026-11-17' });
+const many = buildCustomerEmail({ ...sample, medium: 2, large: 3, extrasHair: 5, extrasOdor: 1, total: 310, agreedReturnDate: '2026-11-18', returnTime: '15-17' });
 const manyHair = many.order.lines.find(l => l.name === 'Karvanpoisto (per matto)');
 const manyOdor = many.order.lines.find(l => l.name === 'Hajunpoisto (kaikki matot)');
 if (!manyHair || manyHair.qty !== 5 || manyHair.unitPrice !== 10 || manyHair.sum !== 50) { console.error('VIRHE: karva qty PDF', manyHair); process.exit(1); }
 if (!manyOdor || manyOdor.qty !== 1 || manyOdor.unitPrice !== 10 || manyOdor.sum !== 10) { console.error('VIRHE: haju PDF', manyOdor); process.exit(1); }
-if (many.order.returnDate !== '2026-11-17' || !many.body.includes('17.11.2026') || !many.htmlBody.includes('17.11.2026') || !many.pdfHtml.includes('17.11.2026')) { console.error('VIRHE: sovittu palautus ei näy'); process.exit(1); }
+if (many.order.returnDate !== '2026-11-18' || !many.body.includes('18.11.2026 klo 15-17') || !many.htmlBody.includes('18.11.2026 klo 15-17') || !many.pdfHtml.includes('18.11.2026 klo 15-17')) { console.error('VIRHE: sovittu palautus ei näy'); process.exit(1); }
+for (const bad of ['4 päivää noudosta', 'MobilePay', 'kone- tai käsinpesu', 'kotipaikkansa käräjäoikeudessa', 'sovitaan hinta erikseen', 'sopimuspäivästä eli viimeistään', 'class="box"']) {
+  if (mail.pdfHtml.includes(bad)) { console.error('VIRHE: pdfHtml sisältää vanhan lupauksen', bad); process.exit(1); }
+}
 if (!many.pdfHtml.includes('Karvanpoisto (per matto)') || !many.pdfHtml.includes('Hajunpoisto (kaikki matot)')) { console.error('VIRHE: pdfHtml-rivien nimet'); process.exit(1); }
 console.log('Asiakasviesti OK (ei URL:ää, htmlBody + pdfHtml, ei provisiota)');
 
@@ -220,7 +227,7 @@ function freePort() {
     if (!log.includes('Mattorundi')) throw new Error('palvelin ei käynnistynyt: ' + log);
     const orderRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       name: 'Maija <Test>', phone: '0401234567', email: 'maija@example.com', address: 'Testikatu 1', postal: '33100', city: 'Tampere',
-      pickupDate: '2026-11-11', pickupTime: '9–11', returnDate: '2026-11-12', medium: 1, large: 1, extrasHair: 1, extrasOdor: 0, acceptTerms: true, notes: 'Ovikoodi 1234'
+      pickupDate: '2026-11-11', pickupTime: '9–11', returnDate: '2026-11-17', returnTime: '9-11', medium: 1, large: 1, extrasHair: 1, extrasOdor: 0, acceptTerms: true, notes: 'Ovikoodi 1234'
     })});
     const created = await orderRes.json();
     if (orderRes.status !== 201 || !created.id) throw new Error('tilauksen luonti ' + orderRes.status + ' ' + JSON.stringify(created));
@@ -229,11 +236,11 @@ function freePort() {
     const sync = posts.find(p => !p.action && p.order);
     if (!sync || sync.secret !== 'test-secret' || sync.order.commission == null || sync.order.number == null) throw new Error('Sheets-kirjaus rikki: ' + JSON.stringify(sync));
     if (sync.order.id !== created.id || sync.order.number !== 'MR-2026-0001') throw new Error('Sheets-id tai numero: ' + sync.order.id + ' ' + sync.order.number);
-    if (!sync.order.snapshot || sync.order.snapshot.id !== created.id || sync.order.snapshot.notes !== 'Ovikoodi 1234' || sync.order.snapshot.priceMedium !== 44 || sync.order.snapshot.agreedReturnDate !== '2026-11-15') throw new Error('Sheets-snapshot: ' + JSON.stringify(sync.order.snapshot));
+    if (!sync.order.snapshot || sync.order.snapshot.id !== created.id || sync.order.snapshot.notes !== 'Ovikoodi 1234' || sync.order.snapshot.priceMedium !== 44 || sync.order.snapshot.agreedReturnDate !== '2026-11-17' || sync.order.snapshot.returnTime !== '9-11') throw new Error('Sheets-snapshot: ' + JSON.stringify(sync.order.snapshot));
     if (sync.pdfHtml || sync.action) throw new Error('Sheets-kirjaus sai sähköpostikenttiä');
-    if (sync.order.returnDate !== '2026-11-15' || !sync.order.notes.includes('Palautus 15.11.2026') || !sync.order.notes.includes('Karvanpoisto 1 kpl') || sync.order.notes.includes('koko tilaus')) throw new Error('Sheets-huomio: ' + sync.order.notes + ' / ' + sync.order.returnDate);
+    if (sync.order.returnDate !== '2026-11-17' || !sync.order.notes.includes('Palautus 17.11.2026 klo 9-11') || !sync.order.notes.includes('Karvanpoisto 1 kpl') || sync.order.notes.includes('koko tilaus')) throw new Error('Sheets-huomio: ' + sync.order.notes + ' / ' + sync.order.returnDate);
     const pub = await (await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + created.id)).json();
-    if (pub.returnDate !== '2026-11-15' || pub.extrasHair !== 1) throw new Error('verkon tilaus ' + JSON.stringify({ returnDate: pub.returnDate, extrasHair: pub.extrasHair }));
+    if (pub.returnDate !== '2026-11-17' || pub.returnTime !== '9-11' || pub.extrasHair !== 1 || pub.payment !== 'Korttimaksu palautuksen yhteydessä') throw new Error('verkon tilaus ' + JSON.stringify({ returnDate: pub.returnDate, returnTime: pub.returnTime, extrasHair: pub.extrasHair, payment: pub.payment }));
     const emailRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + created.id + '/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     const emailJson = await emailRes.json();
     if (emailRes.status !== 200 || emailJson.ok !== true) throw new Error('email ' + emailRes.status + ' ' + JSON.stringify(emailJson) + ' log ' + log);
@@ -244,7 +251,7 @@ function freePort() {
     if (sent.secret !== 'test-secret' || sent.to !== 'maija@example.com') throw new Error('email osoite/secret');
     if (typeof sent.body !== 'string' || sent.body.trim().length < 80) throw new Error('body tyhjä tai liian lyhyt: ' + (sent.body && sent.body.length));
     if (!/kiitos/i.test(sent.body) || !sent.body.includes('PDF')) throw new Error('body ilman kiitos/PDF');
-    if (!/Sopimus: \d{1,2}\.\d{1,2}\.\d{4} klo \d{2}\.\d{2}/.test(sent.body) || !sent.body.includes('Olet tehnyt tämän tilauksen') || !sent.body.includes('9–11') || !sent.body.includes('15.11.2026') || !/ehdot/i.test(sent.body)) throw new Error('email teksti puutteellinen: ' + sent.body);
+    if (!/Sopimus: \d{1,2}\.\d{1,2}\.\d{4} klo \d{2}\.\d{2}/.test(sent.body) || !sent.body.includes('Olet tehnyt tämän tilauksen') || !sent.body.includes('9–11') || !sent.body.includes('17.11.2026 klo 9-11') || !/ehdot/i.test(sent.body)) throw new Error('email teksti puutteellinen: ' + sent.body);
     if (typeof sent.htmlBody !== 'string' || sent.htmlBody.trim().length < 80 || !/kiitos/i.test(sent.htmlBody) || !sent.htmlBody.includes('PDF') || !sent.htmlBody.includes('Sopimus')) throw new Error('htmlBody tyhjä tai puutteellinen');
     const raw = rawPosts.find(s => s.includes('"action":"email"'));
     if (!raw) throw new Error('raaka email-payload puuttuu');
@@ -253,7 +260,7 @@ function freePort() {
     const iPdf = raw.indexOf('"pdfHtml":');
     if (iBody < 0 || iHtml < iBody || iPdf < iHtml) throw new Error('payload-järjestys body/htmlBody/pdfHtml ' + [iBody, iHtml, iPdf].join(','));
     if (/https?:\/\/|\/vahvistus/i.test(sent.body) || /https?:\/\/|\/vahvistus/i.test(sent.htmlBody || '')) throw new Error('webhook-viesti sisältää URL:n');
-    if (!sent.body.includes('kiitos, että valitsit') || !sent.body.includes('PDF') || !sent.body.includes('15.11.2026') || !sent.htmlBody.includes('kiitos, että valitsit') || !sent.pdfHtml.includes('Peruuttamisoikeus') || sent.order.returnDate !== '2026-11-15') throw new Error('email sisältö puutteellinen');
+    if (!sent.body.includes('kiitos, että valitsit') || !sent.body.includes('PDF') || !sent.body.includes('17.11.2026') || !sent.htmlBody.includes('kiitos, että valitsit') || !sent.pdfHtml.includes('Peruuttamisoikeus') || sent.pdfHtml.includes('sopimuspäivästä eli viimeistään') || sent.pdfHtml.includes('4 päivää noudosta') || sent.order.returnDate !== '2026-11-17') throw new Error('email sisältö puutteellinen');
     if ('commission' in sent.order) throw new Error('email order sisältää provision');
     if (!/^Mattorundi-tilausvahvistus-MR-.*\.pdf$/.test(sent.pdfFilename)) throw new Error('pdfFilename ' + sent.pdfFilename);
     const page = await fetch('http://127.0.0.1:' + appPort + '/vahvistus?id=' + created.id);
@@ -263,16 +270,16 @@ function freePort() {
     if (html.split("api('/api/orders/'+id)").length - 1 < 2) throw new Error('vahvistus ei hae tilausta uudelleen ennen sähköpostia');
     const sellerRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       channel: 'kotimyynti', sellerCode: 'JANI669', name: 'Matti Myynti', phone: '0409999999', email: 'matti@example.com', address: 'Myyntikatu 2',
-      pickupDate: '2026-11-12', returnDate: '2026-11-18', medium: 2, large: 1, extrasHair: 3, extrasOdor: 1, acceptTerms: true
+      pickupDate: '2026-11-12', returnDate: '2026-11-18', returnTime: '15-17', payment: 'heti', medium: 2, large: 1, extrasHair: 3, extrasOdor: 1, acceptTerms: true
     })});
     const sellerCreated = await sellerRes.json();
     if (sellerRes.status !== 201) throw new Error('myyjätilaus ' + sellerRes.status + ' ' + JSON.stringify(sellerCreated));
     const sellerPub = await (await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + sellerCreated.id)).json();
-    if (sellerPub.returnDate !== '2026-11-18' || sellerPub.extrasHair !== 3 || sellerPub.extrasOdor !== 1 || sellerPub.total !== 182) throw new Error('myyjätilauksen kentät ' + JSON.stringify({ returnDate: sellerPub.returnDate, extrasHair: sellerPub.extrasHair, total: sellerPub.total }));
+    if (sellerPub.returnDate !== '2026-11-18' || sellerPub.returnTime !== '15-17' || sellerPub.payment !== 'Korttimaksu heti (Zettle)' || sellerPub.extrasHair !== 3 || sellerPub.extrasOdor !== 1 || sellerPub.total !== 182) throw new Error('myyjätilauksen kentät ' + JSON.stringify({ returnDate: sellerPub.returnDate, returnTime: sellerPub.returnTime, payment: sellerPub.payment, extrasHair: sellerPub.extrasHair, total: sellerPub.total }));
     const tSale = Date.now();
     while (!posts.some(p => p.order && p.order.extrasHair === 3) && Date.now() - tSale < 3000) await new Promise(r => setTimeout(r, 40));
     const saleSync = posts.find(p => p.order && p.order.extrasHair === 3);
-    if (!saleSync || saleSync.order.commission !== 60 || saleSync.order.returnDate !== '2026-11-18' || !saleSync.order.notes.includes('Karvanpoisto 3 kpl') || !saleSync.order.notes.includes('Hajunpoisto (kaikki matot)') || !saleSync.order.notes.includes('Palautus 18.11.2026')) throw new Error('myyjän sheets ' + JSON.stringify(saleSync && saleSync.order));
+    if (!saleSync || saleSync.order.commission !== 60 || saleSync.order.returnDate !== '2026-11-18' || saleSync.order.payment !== 'Korttimaksu heti (Zettle)' || !saleSync.order.notes.includes('Karvanpoisto 3 kpl') || !saleSync.order.notes.includes('Hajunpoisto (kaikki matot)') || !saleSync.order.notes.includes('Palautus 18.11.2026 klo 15-17')) throw new Error('myyjän sheets ' + JSON.stringify(saleSync && saleSync.order));
     const clampRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       channel: 'kotimyynti', sellerCode: 'JANI669', name: 'Clamp Test', phone: '0401111111', address: 'Clampkatu 1',
       pickupDate: '2026-11-13', medium: 2, large: 0, extrasHair: 5, extrasOdor: 0, acceptTerms: true
@@ -286,6 +293,21 @@ function freePort() {
       pickupDate: '2026-11-14', returnDate: '2026-11-22', medium: 1, large: 0, acceptTerms: true
     })});
     if (badRes.status !== 400) throw new Error('liian myöhäinen palautus meni läpi ' + badRes.status);
+    const badTime = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      channel: 'kotimyynti', sellerCode: 'JANI669', name: 'Väärä Aika', phone: '0402222223', address: 'Aikakatu 1',
+      pickupDate: '2026-11-14', returnDate: '2026-11-17', returnTime: '18-20', medium: 1, large: 0, acceptTerms: true
+    })});
+    if (badTime.status !== 400) throw new Error('palautusaika ikkunan ulkopuolella meni läpi ' + badTime.status);
+    const laskuRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      channel: 'kotimyynti', sellerCode: 'JANI669', name: 'Lasku Test', phone: '0402222224', address: 'Laskukatu 1',
+      pickupDate: '2026-11-14', returnDate: '2026-11-18', returnTime: '11-13', payment: 'lasku', medium: 1, large: 0, acceptTerms: true
+    })});
+    const laskuCreated = await laskuRes.json();
+    if (laskuRes.status !== 201) throw new Error('laskutilaus ' + laskuRes.status + ' ' + JSON.stringify(laskuCreated));
+    const laskuPub = await (await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + laskuCreated.id)).json();
+    if (laskuPub.payment !== 'Lasku 14 vrk' || laskuPub.returnDate !== '2026-11-18') throw new Error('laskun maksutapa ' + laskuPub.payment);
+    const tLasku = Date.now();
+    while (!posts.some(p => p.order && p.order.id === laskuCreated.id) && Date.now() - tLasku < 3000) await new Promise(r => setTimeout(r, 40));
     const survivedId = created.id;
     const firstChild = child;
     await new Promise(resolve => {
@@ -308,7 +330,7 @@ function freePort() {
     if (!log.includes('Mattorundi')) throw new Error('palvelin ei käynnistynyt uudelleen: ' + log);
     const againRes = await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + survivedId);
     const again = await againRes.json();
-    if (againRes.status !== 200 || again.id !== survivedId || again.email !== 'maija@example.com' || again.returnDate !== '2026-11-15' || again.notes !== 'Ovikoodi 1234' || again.priceMedium !== 44 || again.extrasHair !== 1 || 'commission' in again) {
+    if (againRes.status !== 200 || again.id !== survivedId || again.email !== 'maija@example.com' || again.returnDate !== '2026-11-17' || again.returnTime !== '9-11' || again.notes !== 'Ovikoodi 1234' || again.priceMedium !== 44 || again.extrasHair !== 1 || 'commission' in again) {
       throw new Error('Sheets-palautus ' + againRes.status + ' ' + JSON.stringify(again));
     }
     const againMail = await fetch('http://127.0.0.1:' + appPort + '/api/orders/' + survivedId + '/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
@@ -328,7 +350,7 @@ function freePort() {
     const tNum = Date.now();
     while (!posts.some(p => p.order && p.order.id === nextCreated.id) && Date.now() - tNum < 3000) await new Promise(r => setTimeout(r, 40));
     const nextSync = posts.find(p => p.order && p.order.id === nextCreated.id);
-    if (!nextSync || nextSync.order.number !== 'MR-2026-0004') throw new Error('numero ei jatkunut: ' + (nextSync && nextSync.order.number));
+    if (!nextSync || nextSync.order.number !== 'MR-2026-0005') throw new Error('numero ei jatkunut: ' + (nextSync && nextSync.order.number));
     console.log('Webhook-email OK, kentät:', keys);
     console.log('Kaikki testit OK');
   } catch (e) {

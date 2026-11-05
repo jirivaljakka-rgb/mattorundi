@@ -65,12 +65,12 @@
   <div class="tools"><div><label for="pdNew">Lisää noutopäivä</label><input id="pdNew" type="date"></div><button type="button" class="btn btn-o btn-s" onclick="addPd()">Lisää</button></div>
   <p style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-g btn-s" onclick="savePd()">Tallenna noutopäivät</button><button type="button" class="btn btn-o btn-s" onclick="PD=[];drawPd()">Tyhjennä (kaikki työpäivät auki)</button></p>
   <p id="pdmsg"></p>
-  <p class="note">Asiakkaalle luvattu palautus on oletuksena 4 päivää noudosta. Myyjä voi sopia palautuksen 1–6 päivän päähän noudosta. Viikonlopun työpäivät vaikuttavat vain hallin pesukapasiteettiin, eivät luvattua palautuspäivää.</p>
+  <p class="note">Tällä jaksolla asiakkaalle luvattu palautus on 17.11.2026 tai 18.11.2026 klo 9–17. Viikonlopun työpäivät vaikuttavat vain hallin pesukapasiteettiin.</p>
 </div>
 
 <!-- KAPASITEETTI -->
 <h2 id="kapasiteetti">Kapasiteetti – seuraavat 4 viikkoa</h2>
-<p class="lead" style="font-size:15px">Asiakkaalle luvattu palautus on oletus 4 päivää noudosta (myyjä voi sopia 1–6 päivää). Kapasiteetti on eri asia: matot pestään saapumisjärjestyksessä, joka työpäivä <b id="e1"></b> mattoa (pesu alkaa noutoa seuraavana työpäivänä), ja kuivaus vähintään <b id="e2"></b> päivää. Noutopäivä suljetaan, jos noutokiintiö (<b id="e3"></b>) ylittyisi tai varastossa olisi yli <b id="e4"></b> mattoa. Palautukset-sarake on luvattu päivä, ei pesujonon valmistumispäivä.</p>
+<p class="lead" style="font-size:15px">Tällä jaksolla palautus on 17.11. tai 18.11.2026 klo 9–17. Kapasiteetti on eri asia: matot pestään saapumisjärjestyksessä, joka työpäivä <b id="e1"></b> mattoa (pesu alkaa noutoa seuraavana työpäivänä), ja kuivaus vähintään <b id="e2"></b> päivää. Noutopäivä suljetaan, jos noutokiintiö (<b id="e3"></b>) ylittyisi tai varastossa olisi yli <b id="e4"></b> mattoa. Palautukset-sarake on luvattu päivä, ei pesujonon valmistumispäivä.</p>
 <div class="card" style="overflow:auto"><table id="capt"></table></div>
 
 <!-- TILAUKSET -->
