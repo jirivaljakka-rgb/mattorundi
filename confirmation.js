@@ -127,9 +127,11 @@ function channelLabel(order) {
 function mailFacts(order) {
   const time = oneLine(order.pickupTime);
   const vatPct = order.vatPct != null && order.vatPct !== '' ? fiPct(order.vatPct) : fiPct(25.5);
+  const when = fiDateTime(order.createdAt);
   return {
     name: oneLine(order.name),
     number: order.number || '',
+    when: when || 'ajankohta vahvistetaan erikseen',
     pickup: fiDate(order.pickupDate) + (time ? ' ' + time : ''),
     back: fiDate(order.returnDate),
     sum: eur(order.total) + ' (sis. ALV ' + vatPct + ' %)',
@@ -144,8 +146,11 @@ function buildBody(order) {
     '',
     'kiitos, että valitsit Mattorundin!',
     '',
-    'Tilausvahvistuksesi ' + f.number + ' on tämän viestin liitteenä PDF-tiedostona. Siitä näet matot, noutopäivän, hinnan sekä ehdot ja peruuttamisoikeuden.',
+    'Olet tehnyt tämän tilauksen ' + f.when + '.',
     '',
+    'Tilausvahvistus ja ehdot ovat tämän viestin PDF-liitteessä.',
+    '',
+    'Sopimus: ' + f.when + '.',
     'Nouto: ' + f.pickup + '.',
     'Arvioitu palautus: ' + f.back + '.',
     'Summa: ' + f.sum + '.',
@@ -167,14 +172,26 @@ function buildHtmlBody(order) {
     '<tr><td style="padding:22px;font-family:Arial,Helvetica,sans-serif;color:#1d2a24;font-size:16px;line-height:1.5">' +
     '<p style="margin:0 0 12px">Hei ' + esc(f.name) + ',</p>' +
     '<p style="margin:0 0 12px">kiitos, että valitsit Mattorundin!</p>' +
-    '<p style="margin:0 0 16px">Tilausvahvistuksesi ' + esc(f.number) + ' on tämän viestin liitteenä PDF-tiedostona. Siitä näet matot, noutopäivän, hinnan sekä ehdot ja peruuttamisoikeuden.</p>' +
+    '<p style="margin:0 0 12px">Olet tehnyt tämän tilauksen ' + esc(f.when) + '.</p>' +
+    '<p style="margin:0 0 16px">Tilausvahvistus ja ehdot ovat tämän viestin PDF-liitteessä.</p>' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF8F1;border-left:4px solid #0F3B2C;margin:0 0 16px"><tr><td style="padding:4px 16px 8px">' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif">' +
-    row('Nouto', f.pickup) + row('Arvioitu palautus', f.back) + row('Summa', f.sum) +
+    row('Sopimus', f.when) + row('Nouto', f.pickup) + row('Arvioitu palautus', f.back) + row('Summa', f.sum) +
     '</table></td></tr></table>' +
     '<p style="margin:0 0 16px">Jos sinulla on kysyttävää ennen noutoa, vastaa tähän viestiin tai soita ' + esc(f.phone) + '.</p>' +
     '<p style="margin:0;color:#3d5248">Ystävällisin terveisin,<br><strong style="color:#0F3B2C">Mattorundi / Valaja Team Osk</strong><br>' + esc(f.email) + ' · ' + esc(f.phone) + '</p>' +
     '</td></tr></table></td></tr></table></body></html>';
+}
+
+// Pelkkä teksti on se, minkä Gmail näyttää jos htmlBody ei renderöidy. Tyhjää viestiä ei lähetetä.
+function assertOutgoingEmail(body, htmlBody) {
+  const text = typeof body === 'string' ? body : '';
+  const html = typeof htmlBody === 'string' ? htmlBody : '';
+  const plainOk = text.trim().length >= 80 && /kiitos/i.test(text) && /PDF/.test(text) && /Sopimus:/.test(text) && /Nouto:/.test(text) && /palautus/i.test(text) && /Summa:/.test(text) && /ehdot/i.test(text);
+  if (!plainOk) throw new Error('Sähköpostin teksti puuttuu tai on tyhjä.');
+  const htmlOk = html.trim().length >= 80 && /kiitos/i.test(html) && /PDF/.test(html) && /Sopimus/.test(html) && /ehdot/i.test(html);
+  if (!htmlOk) throw new Error('Sähköpostin HTML-teksti puuttuu tai on tyhjä.');
+  return { body: text, htmlBody: html };
 }
 
 function buildPdfHtml(order) {
@@ -239,14 +256,15 @@ function pdfFilename(number) {
 
 function buildCustomerEmail(o) {
   const order = customerOrder(o);
+  const message = assertOutgoingEmail(buildBody(order), buildHtmlBody(order));
   return {
     subject: 'Mattorundi tilausvahvistus ' + order.number,
-    body: buildBody(order),
-    htmlBody: buildHtmlBody(order),
+    body: message.body,
+    htmlBody: message.htmlBody,
     pdfHtml: buildPdfHtml(order),
     pdfFilename: pdfFilename(order.number),
     order
   };
 }
 
-module.exports = { buildCustomerEmail, customerOrder, fiDate, eur, clampExtras, resolveAgreedReturn, returnWindow };
+module.exports = { buildCustomerEmail, customerOrder, fiDate, eur, clampExtras, resolveAgreedReturn, returnWindow, assertOutgoingEmail };

@@ -1,6 +1,6 @@
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const cap = require('./capacity');
-const { buildCustomerEmail, clampExtras, fiDate, resolveAgreedReturn } = require('./confirmation');
+const { buildCustomerEmail, clampExtras, fiDate, resolveAgreedReturn, assertOutgoingEmail } = require('./confirmation');
 const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
@@ -56,17 +56,33 @@ function toSheets(o) {
     .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
     .catch(e => console.error('Sheets-virhe', o.number, e.message));
 }
-async function sendEmailViaSheets({ to, subject, body, htmlBody, pdfHtml, pdfFilename, order }) {
+async function sendEmailViaSheets({ to, subject, body: plainBody, htmlBody, pdfHtml, pdfFilename, order }) {
   const url = process.env.SHEETS_WEBHOOK_URL;
   if (!url) throw new Error('Sähköpostipalvelu ei ole käytössä (SHEETS_WEBHOOK_URL puuttuu).');
   if (typeof fetch !== 'function') throw new Error('Sähköpostipalvelu ei ole käytössä.');
-  // Asiakasviesti: plain-text body + htmlBody, ei URL:ää. pdfHtml:sta Apps Script tekee PDF-liitteen.
-  // Uusi Apps Script -versio on julkaistava (Deploy → Manage deployments → New version), muuten liite jää pois. Katso OHJE-email.md.
-  // Sheets-kirjaus (ei action:email) ei käytä tätä payloadia.
-  const payload = JSON.stringify({
+  // plainBody ei saa viitata requestin body-parseriin. Sekä body että htmlBody ovat
+  // aina ei-tyhjiä ja JSON-kenttinä ennen pdfHtml:ää (katso OHJE-email.md).
+  // Apps Script v6: if (b.htmlBody) msg.htmlBody = String(b.htmlBody).
+  // Jos body on tyhjä, Gmail voi näyttää tyhjän viestin kun htmlBody ei renderöidy.
+  const message = assertOutgoingEmail(plainBody, htmlBody);
+  const fields = {
     secret: (process.env.SHEETS_SECRET || '').trim(),
-    action: 'email', to, subject, body, htmlBody, pdfHtml, pdfFilename, order
-  });
+    action: 'email',
+    to,
+    subject: subject || '',
+    body: message.body,
+    htmlBody: message.htmlBody
+  };
+  if (pdfFilename) fields.pdfFilename = pdfFilename;
+  if (pdfHtml) fields.pdfHtml = pdfHtml;
+  if (order) fields.order = order;
+  const payload = JSON.stringify(fields);
+  const iBody = payload.indexOf('"body":');
+  const iHtml = payload.indexOf('"htmlBody":');
+  const iPdf = payload.indexOf('"pdfHtml":');
+  if (iBody < 0 || iHtml < iBody || (iPdf !== -1 && iPdf < iHtml)) {
+    throw new Error('Sähköpostin kenttäjärjestys on väärä.');
+  }
   // Apps Script palauttaa 302 → echo-URL; follow ei toimi POST:lle, joten haetaan Location erikseen.
   let r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual', signal: AbortSignal.timeout(25000) });
   if (r.status >= 300 && r.status < 400) {
