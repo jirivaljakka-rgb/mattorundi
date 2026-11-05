@@ -53,6 +53,12 @@
     <label>Ehdotettu noutopäivä *</label><div id="cal" aria-live="polite"></div>
     <label for="pickupTime">Noutoaika</label><input id="pickupTime" placeholder="esim. klo 16–18">
     <div class="sum" id="sum" aria-live="polite"></div>
+    <label>Maksutapa</label>
+    <div class="pay-choice" role="radiogroup">
+      <label><input type="radio" name="payment" value="heti"> Maksaa heti (kortti / MobilePay)</label>
+      <label><input type="radio" name="payment" value="palautus" checked> Maksu palautuksen yhteydessä</label>
+      <label><input type="radio" name="payment" value="lasku"> Lasku 14 vrk</label>
+    </div>
   </fieldset>
 
   <fieldset id="fs-confirm" data-needs-check>

@@ -1,0 +1,142 @@
+<!doctype html><html lang="fi"><head><meta charset="utf-8"><title>Mattorundi – Tilausvahvistus / Palvelusopimus</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+@page{size:A4;margin:0}
+:root{--g:#0F3B2C;--lime:#B5CD34;--off:#FBF8F1;--mut:#5d6b64;--line:#9aa59f;--bd:#dfe3dc}
+*{box-sizing:border-box}
+body{margin:0;font-family:Manrope,Arial,sans-serif;color:#1d2a24;font-size:8.6pt;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;padding:9mm 12mm 9mm;position:relative;overflow:hidden;page-break-after:always;background:#fff}
+.page:last-child{page-break-after:auto}
+h1,h2,h3,.logo{font-family:"Bricolage Grotesque",Manrope,sans-serif}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:4mm;border-bottom:2px solid var(--g)}
+.logo{display:inline-flex;align-items:center;font-weight:800;font-size:25pt;letter-spacing:-.04em;color:var(--g);line-height:1}
+.logo svg{width:48px;height:21px;margin:8px 0 0 3px}
+.tag{font-size:8.4pt;color:var(--mut);margin-top:2px}
+.co{text-align:right;font-size:7.8pt;line-height:1.45;color:var(--mut)}.co b{color:var(--g);font-size:8.4pt}
+h1{font-size:15pt;color:var(--g);margin:3mm 0 0;letter-spacing:-.02em}
+.sub{color:var(--mut);margin:0 0 2mm;font-size:8.2pt}
+.sum{background:var(--off);border:1px solid var(--bd);border-left:5px solid var(--lime);border-radius:8px;padding:3mm 4mm;display:grid;grid-template-columns:repeat(4,1fr);gap:3mm}
+.sum h3{grid-column:1/-1;margin:0;font-size:10.5pt;color:var(--g)}
+.sum div{font-size:7.9pt;line-height:1.35}.sum b{display:block;color:var(--g);font-size:8.6pt;margin-bottom:1px}
+.ic{display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--g);color:#fff;font-size:8pt;align-items:center;justify-content:center;font-weight:800;margin-right:6px;flex:none}
+h2{display:flex;align-items:center;font-size:10pt;color:var(--g);margin:2.6mm 0 1mm;letter-spacing:.01em}
+h2:after{content:"";flex:1;height:1px;background:var(--bd);margin-left:8px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 7mm}
+.fl{border-bottom:1px solid var(--line);height:7.2mm;padding-top:1px;font-size:7pt;color:var(--mut);font-weight:600}
+.fl.half{display:flex;gap:4mm;border:0}.fl.half>span{flex:1;border-bottom:1px solid var(--line)}
+.bx{display:inline-block;width:4.2mm;height:4.2mm;border:1.4px solid var(--g);border-radius:1px;vertical-align:-1.1mm;margin-right:5px;background:#fff;flex:none}
+.note{font-size:7.6pt;color:var(--mut);margin:1mm 0}
+table{width:100%;border-collapse:collapse;margin-top:1mm}
+th{font-size:7.4pt;text-align:left;color:var(--g);background:var(--off);padding:1.5mm 2mm;border-bottom:1.5px solid var(--g)}
+td{border-bottom:1px solid var(--bd);height:7.8mm;padding:0 2mm;vertical-align:middle;font-size:7.8pt}
+td.n{width:6mm;color:var(--mut);font-weight:700}
+td.k{width:84mm;white-space:nowrap}td.k label{margin-right:3.5mm}
+.chk{display:flex;align-items:flex-start;margin:1.6mm 0;font-size:8.2pt}
+.inline{display:inline-block;border-bottom:1px solid var(--line);min-width:24mm;height:5mm;vertical-align:bottom}
+.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin-top:1mm}
+.opt{border:1px solid var(--bd);border-radius:6px;padding:2.2mm 3mm}
+.opt .t{font-weight:700;color:var(--g);display:flex;align-items:center}
+.opt .s{margin:1.5mm 0 0 7mm}
+.price{display:flex;align-items:flex-end;gap:5mm;background:var(--off);border-radius:6px;padding:2mm 3mm;margin-top:1mm}
+.price .big{font-weight:800;color:var(--g);font-size:9pt}.price .inline{min-width:30mm;height:7mm}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:10mm}
+.sig div{border-top:1.3px solid var(--g);padding-top:1mm;font-size:7.4pt;color:var(--mut);font-weight:600}
+.foot{position:absolute;left:12mm;right:12mm;bottom:5mm;display:flex;justify-content:space-between;font-size:7.2pt;color:var(--mut);border-top:1px solid var(--bd);padding-top:2mm}
+.foot b{color:var(--g)}
+.trust{display:flex;gap:4mm;margin-top:2.5mm;font-size:7.5pt;color:var(--g);font-weight:700}
+.trust span:before{content:"✓ ";color:var(--g)}
+/* back */
+.terms{column-count:2;column-gap:8mm;font-size:9pt;line-height:1.55;margin-top:6mm}
+.term{break-inside:avoid;margin-bottom:4.5mm}
+.term h3{font-size:9.4pt;color:var(--g);margin:0 0 1mm;display:flex;align-items:center}
+.term p{margin:0}
+.term .ic{width:17px;height:17px}
+.end{margin-top:6mm;background:var(--off);border-left:5px solid var(--lime);border-radius:8px;padding:4mm 5mm;font-size:8.6pt}
+.end b{color:var(--g)}
+.contact{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin-top:5mm;font-size:8pt}
+.contact div{border:1px solid var(--bd);border-radius:6px;padding:3mm}.contact b{display:block;color:var(--g);font-size:8.6pt}
+.deco{position:absolute;right:-8mm;bottom:22mm;opacity:.9}
+</style></head><body>
+<!-- ============ ETUSIVU ============ -->
+<section class="page">
+<div class="hd">
+ <div><span class="logo" aria-label="Mattorundi">mattorundi<svg viewBox="0 0 46 20" aria-hidden="true"><path d="M1 12c6 0 9-1 13-3 4-2 6-6 3-7s-5 4-1 7c4 3 10 2 16 1" fill="none" stroke="#B5CD34" stroke-width="2.2" stroke-linecap="round"/><path d="M33 6v10M36 5v11M39 5v11M42 6v10" stroke="#B5CD34" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+ <div class="tag">Mattojen nouto, pesu ja palautus – Tampere</div></div>
+ <div class="co"><b>Valaja Team Osk</b><br>Y-tunnus 3529504-8 · Ennakkoperintä- ja ALV-rekisteri<br>Kuntokatu 3 C, 33520 Tampere<br>+358 40 410 8581 · mattorundi@gmail.com</div>
+</div>
+<h1>Tilausvahvistus / Palvelusopimus</h1>
+<p class="sub">Tämä sopimus tehdään kahtena kappaleena – toinen jää sinulle.</p>
+
+<div class="sum">
+ <h3>Tilauksesi lyhyesti</h3>
+ <div><b>Hinta / matto</b>Pieni 1–2,4 m² <b style="display:inline">44 €</b><br>Iso 2,5–3,5 m² <b style="display:inline">54 €</b><br>sis. alv 25,5 %</div>
+ <div><b>Nouto &amp; palautus</b>Haemme matot ovelta ja tuomme ne pestyinä takaisin.</div>
+ <div><b>Maksutapa</b>Heti, palautuksen yhteydessä (kortti / MobilePay) tai laskulla 14 vrk.</div>
+ <div><b>Turvallisesti</b>14 vrk peruutusoikeus. Toiminnan vastuuvakuutus voimassa.</div>
+</div>
+
+<h2><span class="ic">1</span>Asiakkaan tiedot &amp; nouto- ja palautusosoite</h2>
+<div class="cols">
+ <div><div class="fl">Nimi</div><div class="fl">Osoite</div><div class="fl">Puhelin</div><div class="fl">Sähköposti</div></div>
+ <div><div class="fl">Katuosoite (nouto ja palautus)</div><div class="fl">Postinumero ja -toimipaikka</div><div class="fl">Lisätiedot (ovikoodi, kerros tms.)</div>
+ <div class="fl">Toivottu nouto: kk &nbsp;<span class="inline" style="min-width:16mm"></span> / 2026 &nbsp; pvm <span class="inline" style="min-width:20mm"></span></div></div>
+</div>
+
+<h2><span class="ic">2</span>Matot</h2>
+<div class="cols" style="grid-template-columns:1fr 2fr"><div class="fl">Mattojen lukumäärä</div><div class="fl">Materiaalit</div></div>
+<p class="note">Palvelu kattaa pienet (1–2,4 m²) ja isot (2,5–3,5 m²) matot. Tätä pienemmistä tai isommista matoista sovitaan tapauskohtaisesti. Mattojen lopullinen koko arvioidaan noutotilanteessa.</p>
+<table><tr><th></th><th>Maton kuvaus (väri, kuvio…)</th><th>Kategoria</th><th>Erityishuomiot</th></tr>
+<tr><td class=n>1</td><td></td><td class=k><label><span class=bx></span>Pieni 44 €</label><label><span class=bx></span>Iso 54 €</label><label><span class=bx></span>Muu</label></td><td></td></tr>
+<tr><td class=n>2</td><td></td><td class=k><label><span class=bx></span>Pieni 44 €</label><label><span class=bx></span>Iso 54 €</label><label><span class=bx></span>Muu</label></td><td></td></tr>
+<tr><td class=n>3</td><td></td><td class=k><label><span class=bx></span>Pieni 44 €</label><label><span class=bx></span>Iso 54 €</label><label><span class=bx></span>Muu</label></td><td></td></tr>
+<tr><td class=n>4</td><td></td><td class=k><label><span class=bx></span>Pieni 44 €</label><label><span class=bx></span>Iso 54 €</label><label><span class=bx></span>Muu</label></td><td></td></tr>
+<tr><td class=n>5</td><td></td><td class=k><label><span class=bx></span>Pieni 44 €</label><label><span class=bx></span>Iso 54 €</label><label><span class=bx></span>Muu</label></td><td></td></tr>
+</table>
+<div class="chk"><span class="bx"></span>Sisältää paksuja, nukkamateriaalisia tai vaahtopohjaisia mattoja (kuivuminen voi kestää pidempään)</div>
+
+<h2><span class="ic">3</span>Hinta ja maksutapa</h2>
+<div class="price"><div><span class="big">Arvioitu kokonaishinta</span> <span class="inline"></span> € <div class="note" style="margin:0">sis. alv 25,5 % · tarkentuu noutohetkellä mittauksen jälkeen</div></div>
+<div style="margin-left:auto"><span class="big">Arvioitu palautusaika</span> <span class="inline" style="min-width:14mm"></span> vrk noudosta</div></div>
+<div class="fl" style="height:6.5mm">Erityishuomiot</div>
+<div class="pay">
+ <div class="opt"><div class="t"><span class="bx"></span>Maksaa heti (sopimusta tehtäessä)</div><div class="s"><span class="bx"></span>Kortti &nbsp;&nbsp; <span class="bx"></span>MobilePay</div></div>
+ <div class="opt"><div class="t"><span class="bx"></span>Maksu palautuksen yhteydessä</div><div class="s"><span class="bx"></span>Kortti &nbsp;&nbsp; <span class="bx"></span>MobilePay</div></div>
+ <div class="opt"><div class="t"><span class="bx"></span>Lasku työn jälkeen, maksuaika 14 vrk</div><div class="s"><span class="bx"></span>Sähköposti &nbsp;&nbsp; <span class="bx"></span>Paperilasku (+5 €)</div></div>
+</div>
+<p class="note">Viivästyskorko korkolain mukaan. Huomautuskulu 5 €.</p>
+
+<h2><span class="ic">4</span>Hyväksyntä ja allekirjoitukset</h2>
+<div class="chk"><span class="bx"></span>Hyväksyn, että työ voidaan aloittaa ennen 14 vrk peruutusoikeusajan päättymistä.</div>
+<div class="chk"><span class="bx"></span><span>Haluan saada Mattorundin tarjouksia sähköpostitse (vapaaehtoinen). Voin perua suostumukseni milloin tahansa ottamalla yhteyttä Mattorundiin.</span></div>
+<div style="margin-top:3mm">Paikka ja aika: <span class="inline" style="min-width:60mm"></span> &nbsp; <span class="inline" style="min-width:12mm"></span> . <span class="inline" style="min-width:12mm"></span> / 2026</div>
+<div class="sig"><div>Asiakkaan allekirjoitus ja nimenselvennys</div><div>Myyjän allekirjoitus ja nimenselvennys</div></div>
+<div class="foot"><span><b>Sopimusehdot kääntöpuolella.</b> Molemmat osapuolet sitoutuvat niihin.</span><span>Kiitos, että valitsit Mattorundin! 🌿</span><span>1 / 2</span></div>
+</section>
+
+<!-- ============ KÄÄNTÖPUOLI ============ -->
+<section class="page">
+<div class="hd" style="align-items:center">
+ <span class="logo" style="font-size:19pt">mattorundi<svg viewBox="0 0 46 20" style="width:38px;height:17px" aria-hidden="true"><path d="M1 12c6 0 9-1 13-3 4-2 6-6 3-7s-5 4-1 7c4 3 10 2 16 1" fill="none" stroke="#B5CD34" stroke-width="2.2" stroke-linecap="round"/><path d="M33 6v10M36 5v11M39 5v11M42 6v10" stroke="#B5CD34" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+ <div class="co"><b>Sopimusehdot</b><br>Kääntöpuoli – Tilausvahvistus / Palvelusopimus</div>
+</div>
+<div class="terms">
+<div class="term"><h3><span class="ic">1</span>Peruutusoikeus</h3><p>Kuluttajalla on 14 vrk lakisääteinen peruuttamisoikeus sopimuksen teosta. Mikäli asiakas pyytää työn aloittamista ennen peruutusoikeusajan päättymistä (merkitty etusivun rastilla), asiakas hyväksyy työn aloittamisen ja peruutusoikeuden päättymisen jo suoritetun työn osalta.</p></div>
+<div class="term"><h3><span class="ic">2</span>Tilauksen sitovuus</h3><p>14 vrk peruuttamisajan jälkeen tilaus on sitova. Jos asiakas peruu tilauksen sen jälkeen, kun työ on hänen pyynnöstään jo aloitettu (esim. matot noudettu), yrityksellä on oikeus periä 25 € peruutusmaksu.</p></div>
+<div class="term"><h3><span class="ic">3</span>Hinnan vahvistus</h3><p>Sopimuksentekohetkellä ilmoitettu kokonaishinta on arvio, joka perustuu asiakkaan kuvaamiin mattoihin. Lopullinen hinta lasketaan noutotilanteessa mitatun pinta-alan perusteella. Pyöreiden mattojen pinta-ala lasketaan kaavalla halkaisija × halkaisija.</p></div>
+<div class="term"><h3><span class="ic">4</span>Mattojen haltuunotto ja vastuu</h3><p>Yrityksellä on voimassa oleva toiminnan vastuuvakuutus. Matot ovat yrityksen hallussa noudosta palautukseen.</p></div>
+<div class="term"><h3><span class="ic">5</span>Reklamaatio</h3><p>Mahdolliset huomautukset on tehtävä kirjallisesti 7 vrk kuluessa maton palautuksesta.</p></div>
+<div class="term"><h3><span class="ic">6</span>Ajanmuutokset</h3><p>Alle 48 h ennen sovittua noutoa tehdyistä muutoksista peritään 10 € käsittelymaksu. Yrityksellä on oikeus siirtää noutoa poikkeuksellisten olosuhteiden vuoksi (esim. kaluston rikkoutuminen, sääolosuhteet) ilman korvausvelvollisuutta; uusi ajankohta sovitaan viipymättä.</p></div>
+<div class="term"><h3><span class="ic">7</span>Maksuehdot</h3><p>Hyväksytyt maksutavat: MobilePay, kortti ja lasku. Maksu voidaan suorittaa myös heti sopimusta tehtäessä. Viivästyskorko korkolain (633/1982) mukaan. Huomautuskulu 5 € / huomautus.</p></div>
+<div class="term"><h3><span class="ic">8</span>Tietosuoja (GDPR)</h3><p>Asiakastietoja (nimi, osoite, puhelin, sähköposti) käsitellään tilauksen toimittamiseen, asiakasviestintään ja luvalla sähköpostitarjouksiin. Tietoja ei luovuteta kolmansille osapuolille.</p></div>
+<div class="term"><h3><span class="ic">9</span>Sovellettava laki</h3><p>Sopimukseen sovelletaan Suomen lakia. Mahdolliset riidat ratkaistaan ensisijaisesti neuvottelemalla. Kuluttaja voi saattaa asian Kuluttajariitalautakunnan (KRIL) käsiteltäväksi.</p></div>
+</div>
+<div class="end"><b>Sopimus on tehty kahtena kappaleena, yksi kummallekin osapuolelle.</b></div>
+<div class="contact">
+ <div><b>Kysyttävää?</b>+358 40 410 8581<br>mattorundi@gmail.com</div>
+ <div><b>Yritys</b>Valaja Team Osk<br>Y-tunnus 3529504-8</div>
+ <div><b>Osoite</b>Kuntokatu 3 C<br>33520 Tampere</div>
+</div>
+<svg class="deco" width="230" height="100" viewBox="0 0 46 20" aria-hidden="true"><path d="M1 12c6 0 9-1 13-3 4-2 6-6 3-7s-5 4-1 7c4 3 10 2 16 1" fill="none" stroke="#B5CD34" stroke-width="1.2" stroke-linecap="round" opacity=".55"/><path d="M33 6v10M36 5v11M39 5v11M42 6v10" stroke="#B5CD34" stroke-width="1" stroke-linecap="round" opacity=".55"/></svg>
+<div class="foot"><span><b>mattorundi</b> · puhtaat matot ovelta ovelle</span><span>2 / 2</span></div>
+</section>
+</body></html>
