@@ -1,5 +1,5 @@
 /**
- * Asiakkaan tilausvahvistus sähköpostiin (lyhyt teksti + PDF-HTML).
+ * Asiakkaan tilausvahvistus sähköpostiin (teksti + HTML-runko + PDF-HTML).
  * Ei linkkiä /vahvistus-sivulle eikä myyjän toimintoja.
  * Apps Script tekee pdfHtml:sta liitteen. Katso OHJE-email.md.
  */
@@ -47,20 +47,50 @@ function eur(n) {
 }
 function fiPct(n) { return String(n).replace('.', ','); }
 
+// Karvanpoisto 0..mattojen määrä (10 € / matto). Hajunpoisto 0 tai 1 (10 €, kaikki matot).
+function clampExtras(medium, large, hair, odor) {
+  const n = Math.max(0, (parseInt(medium, 10) || 0) + (parseInt(large, 10) || 0));
+  let h = parseInt(hair, 10);
+  if (!Number.isFinite(h) || h < 0) h = 0;
+  if (h > n) h = n;
+  let o = parseInt(odor, 10);
+  if (!Number.isFinite(o) || o < 0) o = 0;
+  if (o > 1) o = 1;
+  return { carpets: n, extrasHair: h, extrasOdor: o, extrasSum: 10 * h + 10 * o };
+}
+
+// Asiakkaalle luvattu palautus: nouto+1 … nouto+6, oletus nouto+4.
+function returnWindow(pickup) {
+  const iso = ymd(pickup);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const days = [];
+  for (let i = 1; i <= 6; i++) days.push(addDaysYmd(iso, i));
+  return { min: days[0], max: days[5], defaultDate: addDaysYmd(iso, 4), days };
+}
+function resolveAgreedReturn(pickup, raw) {
+  const w = returnWindow(pickup);
+  if (!w) return { ok: false, error: 'Noutopäivä ei kelpaa.' };
+  const chosen = raw == null ? '' : String(raw).trim().slice(0, 10);
+  if (!chosen) return { ok: true, date: w.defaultDate };
+  if (!w.days.includes(chosen)) return { ok: false, error: 'Palautuspäivä voi olla 1–6 päivää noudon jälkeen.' };
+  return { ok: true, date: chosen };
+}
+
 function customerOrder(o) {
   const priceMedium = o.priceMedium != null ? +o.priceMedium : 44;
   const priceLarge = o.priceLarge != null ? +o.priceLarge : 54;
   const medium = +o.medium || 0;
   const large = +o.large || 0;
-  const extrasHair = +o.extrasHair ? 1 : 0;
-  const extrasOdor = +o.extrasOdor ? 1 : 0;
+  const extras = clampExtras(medium, large, o.extrasHair, o.extrasOdor);
+  const extrasHair = extras.extrasHair;
+  const extrasOdor = extras.extrasOdor;
   const lines = [];
   if (medium) lines.push({ name: 'Keskikokoinen matto (1–2,4 m²)', qty: medium, unitPrice: priceMedium, sum: +(medium * priceMedium).toFixed(2) });
   if (large) lines.push({ name: 'Iso matto (2,5–3,5 m²)', qty: large, unitPrice: priceLarge, sum: +(large * priceLarge).toFixed(2) });
-  if (extrasHair) lines.push({ name: 'Karvanpoisto (koko tilaus)', qty: 1, unitPrice: 10, sum: 10 });
-  if (extrasOdor) lines.push({ name: 'Hajunpoisto (koko tilaus)', qty: 1, unitPrice: 10, sum: 10 });
+  if (extrasHair) lines.push({ name: 'Karvanpoisto (per matto)', qty: extrasHair, unitPrice: 10, sum: 10 * extrasHair });
+  if (extrasOdor) lines.push({ name: 'Hajunpoisto (kaikki matot)', qty: 1, unitPrice: 10, sum: 10 });
   const contractDate = ymd(o.createdAt);
-  const returnDate = o.returnDate || o.estReturnAtBooking || '';
+  const returnDate = o.agreedReturnDate || o.returnDate || o.estReturnAtBooking || '';
   return {
     number: o.number || '',
     createdAt: o.createdAt || '',
@@ -94,19 +124,57 @@ function channelLabel(order) {
   return 'Verkkovaraus';
 }
 
+function mailFacts(order) {
+  const time = oneLine(order.pickupTime);
+  const vatPct = order.vatPct != null && order.vatPct !== '' ? fiPct(order.vatPct) : fiPct(25.5);
+  return {
+    name: oneLine(order.name),
+    number: order.number || '',
+    pickup: fiDate(order.pickupDate) + (time ? ' ' + time : ''),
+    back: fiDate(order.returnDate),
+    sum: eur(order.total) + ' (sis. ALV ' + vatPct + ' %)',
+    phone: COMPANY.phone,
+    email: COMPANY.email
+  };
+}
 function buildBody(order) {
-  const lines = [
-    'Hei ' + oneLine(order.name) + ',',
+  const f = mailFacts(order);
+  return [
+    'Hei ' + f.name + ',',
     '',
-    'kiitos tilauksesta! Tilausvahvistus ' + order.number + ' on tämän viestin liitteenä (PDF).',
+    'kiitos, että valitsit Mattorundin!',
     '',
-    'Nouto: ' + fiDate(order.pickupDate) + (oneLine(order.pickupTime) ? ' ' + oneLine(order.pickupTime) : '') + '.'
-  ];
-  if (order.returnDate) lines.push('Arvioitu palautus: ' + fiDate(order.returnDate) + '.');
-  const vatBit = order.vatPct != null && order.vatPct !== '' ? ' ' + fiPct(order.vatPct) + ' %' : '';
-  lines.push('Summa: ' + eur(order.total) + ' (sis. ALV' + vatBit + ').');
-  lines.push('', 'Ystävällisin terveisin,', 'Mattorundi / Valaja Team Osk', COMPANY.email + ' · ' + COMPANY.phone);
-  return lines.join('\n');
+    'Tilausvahvistuksesi ' + f.number + ' on tämän viestin liitteenä PDF-tiedostona. Siitä näet matot, noutopäivän, hinnan sekä ehdot ja peruuttamisoikeuden.',
+    '',
+    'Nouto: ' + f.pickup + '.',
+    'Arvioitu palautus: ' + f.back + '.',
+    'Summa: ' + f.sum + '.',
+    '',
+    'Jos sinulla on kysyttävää ennen noutoa, vastaa tähän viestiin tai soita ' + f.phone + '.',
+    '',
+    'Ystävällisin terveisin,',
+    'Mattorundi / Valaja Team Osk',
+    f.email + ' · ' + f.phone
+  ].join('\n');
+}
+function buildHtmlBody(order) {
+  const f = mailFacts(order);
+  const row = (label, value) => '<tr><td style="padding:7px 0;color:#3d5248;font-size:13px;width:42%">' + label + '</td><td style="padding:7px 0;font-weight:700;color:#0F3B2C;font-size:16px">' + esc(value) + '</td></tr>';
+  return '<!doctype html><html lang="fi"><body style="margin:0;padding:0;background:#f4f1ea">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea"><tr><td align="center" style="padding:24px 12px">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-top:4px solid #B5CD34;border-radius:12px">' +
+    '<tr><td style="background:#0F3B2C;padding:16px 22px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:800;letter-spacing:-.03em;color:#ffffff">Mattorundi</td></tr>' +
+    '<tr><td style="padding:22px;font-family:Arial,Helvetica,sans-serif;color:#1d2a24;font-size:16px;line-height:1.5">' +
+    '<p style="margin:0 0 12px">Hei ' + esc(f.name) + ',</p>' +
+    '<p style="margin:0 0 12px">kiitos, että valitsit Mattorundin!</p>' +
+    '<p style="margin:0 0 16px">Tilausvahvistuksesi ' + esc(f.number) + ' on tämän viestin liitteenä PDF-tiedostona. Siitä näet matot, noutopäivän, hinnan sekä ehdot ja peruuttamisoikeuden.</p>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF8F1;border-left:4px solid #0F3B2C;margin:0 0 16px"><tr><td style="padding:4px 16px 8px">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif">' +
+    row('Nouto', f.pickup) + row('Arvioitu palautus', f.back) + row('Summa', f.sum) +
+    '</table></td></tr></table>' +
+    '<p style="margin:0 0 16px">Jos sinulla on kysyttävää ennen noutoa, vastaa tähän viestiin tai soita ' + esc(f.phone) + '.</p>' +
+    '<p style="margin:0;color:#3d5248">Ystävällisin terveisin,<br><strong style="color:#0F3B2C">Mattorundi / Valaja Team Osk</strong><br>' + esc(f.email) + ' · ' + esc(f.phone) + '</p>' +
+    '</td></tr></table></td></tr></table></body></html>';
 }
 
 function buildPdfHtml(order) {
@@ -156,7 +224,7 @@ ${rows}
 <tr><td colspan="3"><b>Yhteensä (sis. ALV ${esc(fiPct(order.vatPct))} %)</b></td><td class="num"><b>${esc(eur(order.total))}</b></td></tr>
 <tr><td colspan="3">josta ALV</td><td class="num">${esc(eur(order.vat))}</td></tr>
 </table>
-<p>Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Keskikokoinen matto (1–2,4 m²) ${esc(eur(order.priceMedium))}, iso matto (2,5–3,5 m²) ${esc(eur(order.priceLarge))}. Karvanpoisto ja hajunpoisto 10 € / koko tilaus.</p>
+<p>Hinta sisältää noudon, pesun, kuivauksen ja palautuksen. Keskikokoinen matto (1–2,4 m²) ${esc(eur(order.priceMedium))}, iso matto (2,5–3,5 m²) ${esc(eur(order.priceLarge))}. Karvanpoisto 10 € / matto. Hajunpoisto 10 € (koskee kaikkia mattoja). Arvioitu palautus on oletuksena 4 päivää noudosta ja viimeistään 6 päivää noudosta.</p>
 ${notes}
 <div class="box"><b>Peruuttamisoikeus.</b> Voit peruuttaa sopimuksen ilmoittamatta syytä 14 päivän kuluessa sopimuspäivästä eli viimeistään ${esc(fiDate(order.cancelBy))}. Ilmoita sähköpostilla ${esc(COMPANY.email)} tai puhelimella ${esc(COMPANY.phone)}, tai käytä tämän vahvistuksen lopussa olevaa peruutuslomaketta.</div>
 ${early}${signed}
@@ -174,10 +242,11 @@ function buildCustomerEmail(o) {
   return {
     subject: 'Mattorundi tilausvahvistus ' + order.number,
     body: buildBody(order),
+    htmlBody: buildHtmlBody(order),
     pdfHtml: buildPdfHtml(order),
     pdfFilename: pdfFilename(order.number),
     order
   };
 }
 
-module.exports = { buildCustomerEmail, customerOrder, fiDate, eur };
+module.exports = { buildCustomerEmail, customerOrder, fiDate, eur, clampExtras, resolveAgreedReturn, returnWindow };

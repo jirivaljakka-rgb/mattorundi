@@ -1,5 +1,6 @@
 const $ = s => document.querySelector(s);
 const fmtD = s => { if (!s) return '–'; const d = new Date(s + 'T00:00:00'); return d.toLocaleDateString('fi-FI', { weekday: 'short', day: 'numeric', month: 'numeric', year: 'numeric' }); };
+function addDaysISO(iso, n) { const [y, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
 const eur = n => n.toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 async function api(url, opt = {}) { const r = await fetch(url, { ...opt, headers: { 'Content-Type': 'application/json', ...(opt.headers || {}) } }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Virhe ' + r.status); return j; }
 // Kalenteri: näyttää 6 viikkoa, sulkee täydet päivät, ehdottaa seuraavaa vapaata
@@ -16,9 +17,10 @@ async function renderCalendar(el, n, onPick, selected) {
   let h = '<div class="cal">' + ['ma','ti','ke','to','pe','la','su'].map(x => `<div class="h">${x}</div>`).join('');
   for (const d of shown) { const dd = new Date(d.date + 'T00:00:00');
     const lbl = `${dd.getDate()}.${dd.getMonth() + 1}.`;
-    h += d.ok ? `<button type="button" class="free ${selected === d.date ? 'sel' : ''}" data-d="${d.date}" data-r="${d.returnDate}" title="Arvioitu palautus ${fmtD(d.returnDate)}">${lbl}<small>vapaa</small></button>`
+    const back = addDaysISO(d.date, 4);
+    h += d.ok ? `<button type="button" class="free ${selected === d.date ? 'sel' : ''}" data-d="${d.date}" data-r="${back}" title="Arvioitu palautus ${fmtD(back)} (4 pv noudosta)">${lbl}<small>vapaa</small></button>`
       : `<button type="button" class="closed" disabled title="${d.reason}">${lbl}<small>${NON_DAY.includes(d.reason) ? '' : 'täynnä'}</small></button>`; }
-  el.innerHTML = h + '</div><div class="legend">Vihreä = vapaa noutopäivä · harmaa = suljettu / täynnä. ' + (nextFree ? `<b>Seuraava vapaa päivä ${n} matolle: ${fmtD(nextFree)}</b>` : 'Ei vapaita noutopäiviä juuri nyt – soita 040 41 08581, niin sovitaan.') + '</div>';
+  el.innerHTML = h + '</div><div class="legend">Vihreä = vapaa noutopäivä · arvioitu palautus 4 päivää noudosta (viimeistään 6) · harmaa = suljettu / täynnä. ' + (nextFree ? `<b>Seuraava vapaa päivä ${n} matolle: ${fmtD(nextFree)}</b>` : 'Ei vapaita noutopäiviä juuri nyt – soita 040 41 08581, niin sovitaan.') + '</div>';
   el.querySelectorAll('button.free').forEach(b => b.onclick = () => { el.querySelectorAll('.sel').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); onPick(b.dataset.d, b.dataset.r); });
   if (selected && !days.find(d => d.date === selected && d.ok)) onPick(null, null);
   return nextFree;

@@ -53,12 +53,18 @@
       <div class="qty-wrap"><label for="large">Isot (2,5–3,5 m²) · 54 €</label><div class="qty"><button type="button" data-q="large" data-s="-1" aria-label="Vähennä isoja">−</button><input id="large" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="large" data-s="1" aria-label="Lisää isoja">+</button></div></div>
     </div>
     <div style="margin-top:12px">
-      <p class="hint" style="margin-bottom:8px">Lisäpalvelut koskevat koko tilauksen kaikkia mattoja.</p>
-      <label class="chk"><input type="checkbox" id="extrasHair" value="1"> Karvanpoisto · 10 € (koko tilaus)</label>
-      <label class="chk"><input type="checkbox" id="extrasOdor" value="1"> Hajunpoisto · 10 € (koko tilaus)</label>
+      <div class="qty-wrap">
+        <label for="extrasHair">Karvanpoisto · 10 € / matto</label>
+        <p class="hint">Kuinka monelle matolle. Enintään keskikokoisten ja isojen mattojen määrä.</p>
+        <div class="qty"><button type="button" data-q="extrasHair" data-s="-1" aria-label="Vähennä karvanpoistoa">−</button><input id="extrasHair" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="extrasHair" data-s="1" aria-label="Lisää karvanpoistoa">+</button></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="extrasOdor" value="1"> Hajunpoisto · 10 € (koskee kaikkia mattoja)</label>
     </div>
     <label>Ehdotettu noutopäivä *</label><div id="cal" aria-live="polite"></div>
     <label for="pickupTime">Noutoaika</label><input id="pickupTime" placeholder="esim. klo 16–18">
+    <label for="returnDate">Arvioitu palautuspäivä</label>
+    <select id="returnDate"></select>
+    <p class="hint">Oletus 4 pv noudosta. Vaihda jos asiakas ei ole kotona (max 6 pv).</p>
     <div class="sum" id="sum" aria-live="polite"></div>
     <label>Maksutapa</label>
     <div class="pay-choice" role="radiogroup">
