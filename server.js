@@ -57,14 +57,20 @@ async function sendEmailViaSheets({ to, subject, body }) {
   const url = process.env.SHEETS_WEBHOOK_URL;
   if (!url) throw new Error('Sähköpostipalvelu ei ole käytössä (SHEETS_WEBHOOK_URL puuttuu).');
   if (typeof fetch !== 'function') throw new Error('Sähköpostipalvelu ei ole käytössä.');
-  const r = await fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), action: 'email', to, subject, body }),
-    redirect: 'manual', signal: AbortSignal.timeout(20000)
-  });
+  const payload = JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), action: 'email', to, subject, body });
+  // Apps Script palauttaa 302 → echo-URL; follow ei toimi POST:lle, joten haetaan Location erikseen.
+  let r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual', signal: AbortSignal.timeout(25000) });
+  if (r.status >= 300 && r.status < 400) {
+    const loc = r.headers.get('location');
+    if (!loc) throw new Error('Sähköpostipalvelu ei vastannut (puuttuva ohjaus).');
+    r = await fetch(loc, { signal: AbortSignal.timeout(25000) });
+  }
   let j = null; try { j = await r.json(); } catch {}
-  if (r.status >= 400 || (j && j.ok === false)) throw new Error((j && j.error) || ('Sähköpostin lähetys epäonnistui (HTTP ' + r.status + ').'));
-  return j || { ok: true };
+  if (r.status >= 400 || !j || j.ok !== true) {
+    const msg = (j && j.error) || ('Sähköpostin lähetys epäonnistui (HTTP ' + r.status + ').');
+    throw new Error(String(msg).slice(0, 300));
+  }
+  return j;
 }
 const emailCooldown = new Map(); // orderId -> last send ms
 function save(db) { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(db, null, 2)); fs.renameSync(DATA + '.tmp', DATA); }
