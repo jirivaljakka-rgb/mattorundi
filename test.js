@@ -22,3 +22,18 @@ const pr2 = cap.commission(2 * 49 + 39, 3, m1, { large: 2, medium: 1 });
 console.log('Provisio MYYJA1669 2 isoa + 1 keski:', pr2);
 if (pr2 !== 56) { console.error('VIRHE: iso/keski-provisio'); process.exit(1); }
 console.log('Kaikki testit OK');
+
+// Lisäpalvelut: karvanpoisto / hajunpoisto 2 € / matto
+function orderTotal(med, lg, hair, odor, pm, pl) {
+  const n = med + lg;
+  hair = Math.max(0, Math.min(n, hair|0));
+  odor = Math.max(0, Math.min(n, odor|0));
+  return med * pm + lg * pl + 2 * (hair + odor);
+}
+const tot1 = orderTotal(1, 1, 1, 1, 44, 54); // 44+54+2+2 = 102
+console.log('Hinta 1 keski + 1 iso + karva + haju:', tot1);
+if (tot1 !== 102) { console.error('VIRHE: extras-hinnoittelu'); process.exit(1); }
+const tot2 = orderTotal(2, 0, 5, 0, 44, 54); // hair clamped to 2 → 88+4=92
+console.log('Hinta 2 keski + karva clamp 5→2:', tot2);
+if (tot2 !== 92) { console.error('VIRHE: extras clamp'); process.exit(1); }
+console.log('Extras-testit OK');

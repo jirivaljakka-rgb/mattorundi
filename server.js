@@ -41,13 +41,32 @@ function toSheets(o) {
   const url = process.env.SHEETS_WEBHOOK_URL; if (!url || typeof fetch !== 'function') return;
   let ret = null; try { ret = cap.simulate(db.orders, db.settings).returns[o.id] || null; } catch {}
   const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === String(o.sellerCode).toUpperCase()) : null;
+  const extraBits = [];
+  if (o.extrasHair) extraBits.push('Karvanpoisto ' + o.extrasHair + ' kpl');
+  if (o.extrasOdor) extraBits.push('Hajunpoisto ' + o.extrasOdor + ' kpl');
+  const notesOut = [o.notes, extraBits.join(', ')].filter(Boolean).join(' · ');
   const order = { number: o.number, createdAt: o.createdAt, channel: o.channel, sellerCode: o.sellerCode || '', sellerName: o.sellerName || (sl && sl.name) || '',
     name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city, pickupDate: o.pickupDate, pickupTime: o.pickupTime,
-    large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: ret || o.estReturnAtBooking || '', notes: o.notes, status: o.status, payment: o.payment };
+    large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: ret || o.estReturnAtBooking || '', notes: notesOut, status: o.status, payment: o.payment,
+    extrasHair: o.extrasHair || 0, extrasOdor: o.extrasOdor || 0 };
   fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
     .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
     .catch(e => console.error('Sheets-virhe', o.number, e.message));
 }
+async function sendEmailViaSheets({ to, subject, body }) {
+  const url = process.env.SHEETS_WEBHOOK_URL;
+  if (!url) throw new Error('Sähköpostipalvelu ei ole käytössä (SHEETS_WEBHOOK_URL puuttuu).');
+  if (typeof fetch !== 'function') throw new Error('Sähköpostipalvelu ei ole käytössä.');
+  const r = await fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), action: 'email', to, subject, body }),
+    redirect: 'manual', signal: AbortSignal.timeout(20000)
+  });
+  let j = null; try { j = await r.json(); } catch {}
+  if (r.status >= 400 || (j && j.ok === false)) throw new Error((j && j.error) || ('Sähköpostin lähetys epäonnistui (HTTP ' + r.status + ').'));
+  return j || { ok: true };
+}
+const emailCooldown = new Map(); // orderId -> last send ms
 function save(db) { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(db, null, 2)); fs.renameSync(DATA + '.tmp', DATA); }
 let db = load();
 const today = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Helsinki' });
@@ -82,23 +101,59 @@ http.createServer(async (req, res) => {
       }
       const c = cap.check(db.orders, s, b.pickupDate, n, today());
       if (!c.ok) return send(res, 409, { error: 'Päivä ei ole enää vapaana (' + c.reason + '). Valitse toinen päivä.' });
-      const total = med * s.priceMedium + lg * s.priceLarge;
+      const hair = Math.max(0, Math.min(n, parseInt(b.extrasHair ?? b.hairRemoval) || 0));
+      const odor = Math.max(0, Math.min(n, parseInt(b.extrasOdor ?? b.odorRemoval) || 0));
+      const extrasSum = 2 * (hair + odor);
+      const total = med * s.priceMedium + lg * s.priceLarge + extrasSum;
       const o = { id: crypto.randomUUID(), number: 'MR-' + new Date().getFullYear() + '-' + String(db.orders.length + 1).padStart(4, '0'),
         createdAt: new Date().toISOString(), channel: b.channel === 'kotimyynti' ? 'kotimyynti' : 'verkko', status: 'vahvistettu',
         name: String(b.name).slice(0,120), phone: String(b.phone).slice(0,40), email: String(b.email||'').slice(0,120), address: String(b.address).slice(0,200),
         postal: String(b.postal||'').slice(0,10), city: String(b.city||'Tampere').slice(0,60), notes: String(b.notes||'').slice(0,1000),
-        medium: med, large: lg, carpetsTotal: n, priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, total,
+        medium: med, large: lg, carpetsTotal: n, extrasHair: hair, extrasOdor: odor, priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, total,
         vat: Math.round(total - total / (1 + s.vatPct / 100)) === 0 ? 0 : +(total - total / (1 + s.vatPct / 100)).toFixed(2),
         payment: b.payment === 'heti' ? 'maksettu heti' : b.payment === 'lasku' ? 'lasku 14 vrk' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
         startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
         sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
         commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) : 0,
-        signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: 'LUONNOS-2026-11', estReturnAtBooking: c.returnDate };
+        signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: '2026-11', estReturnAtBooking: c.returnDate };
       if (o.hasPhoto) { const mm = String(b.photo).match(/^data:image\/(\w+);base64,(.*)$/); const dir = path.join(path.dirname(DATA), 'photos'); fs.mkdirSync(dir, { recursive: true }); o.photoFile = o.id + '.' + (mm[1] === 'jpeg' ? 'jpg' : mm[1]); fs.writeFileSync(path.join(dir, o.photoFile), Buffer.from(mm[2], 'base64')); }
       db.orders.push(o); save(db); toSheets(o);
       return send(res, 201, { id: o.id });
     }
     let m;
+    if ((m = p.match(/^\/api\/orders\/([\w-]{36})\/email$/)) && req.method === 'POST') {
+      const o = withReturns().find(x => x.id === m[1]);
+      if (!o) return send(res, 404, { error: 'Ei löydy' });
+      const b = await body(req);
+      const to = String(b.to || o.email || '').trim();
+      if (!to || !to.includes('@')) return send(res, 400, { error: 'Asiakkaalla ei ole sähköpostiosoitetta.' });
+      const last = emailCooldown.get(o.id) || 0;
+      if (Date.now() - last < 15000) return send(res, 429, { error: 'Odota hetki ennen uudelleenlähetystä.' });
+      const link = (process.env.PUBLIC_BASE_URL || ('https://' + (req.headers.host || 'mattorundi.onrender.com'))).replace(/\/$/, '') + '/vahvistus?id=' + o.id;
+      const subject = 'Mattorundi tilausvahvistus ' + o.number;
+      const bodyText = [
+        'Hei ' + o.name + ',',
+        '',
+        'kiitos tilauksesta! Tilausvahvistuksesi, ehdot ja peruutuslomake:',
+        link,
+        '',
+        'Nouto: ' + o.pickupDate + (o.pickupTime ? ' ' + o.pickupTime : '') + '.',
+        'Arvioitu palautus: ' + (o.returnDate || o.estReturnAtBooking || '') + '.',
+        'Summa: ' + o.total + ' € (sis. ALV).',
+        '',
+        'Ystävällisin terveisin,',
+        'Mattorundi / Valaja Team Osk',
+        'mattorundi@gmail.com · 040 41 08581'
+      ].join('\n');
+      try {
+        await sendEmailViaSheets({ to, subject, body: bodyText });
+        emailCooldown.set(o.id, Date.now());
+        return send(res, 200, { ok: true, to });
+      } catch (err) {
+        console.error('Email-virhe', o.number, err.message);
+        return send(res, 502, { error: err.message || 'Sähköpostin lähetys epäonnistui.' });
+      }
+    }
     if ((m = p.match(/^\/api\/orders\/([\w-]{36})$/)) && req.method === 'GET') {
       const o = withReturns().find(x => x.id === m[1]); return o ? send(res, 200, publicOrder(o)) : send(res, 404, { error: 'Ei löydy' });
     }
