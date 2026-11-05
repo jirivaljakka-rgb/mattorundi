@@ -42,8 +42,8 @@ function toSheets(o) {
   let ret = null; try { ret = cap.simulate(db.orders, db.settings).returns[o.id] || null; } catch {}
   const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === String(o.sellerCode).toUpperCase()) : null;
   const extraBits = [];
-  if (o.extrasHair) extraBits.push('Karvanpoisto ' + o.extrasHair + ' kpl');
-  if (o.extrasOdor) extraBits.push('Hajunpoisto ' + o.extrasOdor + ' kpl');
+  if (o.extrasHair) extraBits.push('Karvanpoisto (koko tilaus)');
+  if (o.extrasOdor) extraBits.push('Hajunpoisto (koko tilaus)');
   const notesOut = [o.notes, extraBits.join(', ')].filter(Boolean).join(' · ');
   const order = { number: o.number, createdAt: o.createdAt, channel: o.channel, sellerCode: o.sellerCode || '', sellerName: o.sellerName || (sl && sl.name) || '',
     name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city, pickupDate: o.pickupDate, pickupTime: o.pickupTime,
@@ -101,9 +101,9 @@ http.createServer(async (req, res) => {
       }
       const c = cap.check(db.orders, s, b.pickupDate, n, today());
       if (!c.ok) return send(res, 409, { error: 'Päivä ei ole enää vapaana (' + c.reason + '). Valitse toinen päivä.' });
-      const hair = Math.max(0, Math.min(n, parseInt(b.extrasHair ?? b.hairRemoval) || 0));
-      const odor = Math.max(0, Math.min(n, parseInt(b.extrasOdor ?? b.odorRemoval) || 0));
-      const extrasSum = 2 * (hair + odor);
+      const hair = Math.max(0, Math.min(1, parseInt(b.extrasHair ?? b.hairRemoval) || 0));
+      const odor = Math.max(0, Math.min(1, parseInt(b.extrasOdor ?? b.odorRemoval) || 0));
+      const extrasSum = 10 * hair + 10 * odor;
       const total = med * s.priceMedium + lg * s.priceLarge + extrasSum;
       const o = { id: crypto.randomUUID(), number: 'MR-' + new Date().getFullYear() + '-' + String(db.orders.length + 1).padStart(4, '0'),
         createdAt: new Date().toISOString(), channel: b.channel === 'kotimyynti' ? 'kotimyynti' : 'verkko', status: 'vahvistettu',
@@ -114,7 +114,7 @@ http.createServer(async (req, res) => {
         payment: b.payment === 'heti' ? 'maksettu heti' : b.payment === 'lasku' ? 'lasku 14 vrk' : 'palautuksen yhteydessä', pickupDate: b.pickupDate, pickupTime: String(b.pickupTime||'').slice(0,40),
         startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
         sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
-        commission: b.channel === 'kotimyynti' ? cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) : 0,
+        commission: b.channel === 'kotimyynti' ? +(cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) + 2 * (hair + odor)).toFixed(2) : 0,
         signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: '2026-11', estReturnAtBooking: c.returnDate };
       if (o.hasPhoto) { const mm = String(b.photo).match(/^data:image\/(\w+);base64,(.*)$/); const dir = path.join(path.dirname(DATA), 'photos'); fs.mkdirSync(dir, { recursive: true }); o.photoFile = o.id + '.' + (mm[1] === 'jpeg' ? 'jpg' : mm[1]); fs.writeFileSync(path.join(dir, o.photoFile), Buffer.from(mm[2], 'base64')); }
       db.orders.push(o); save(db); toSheets(o);
