@@ -1,6 +1,6 @@
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const cap = require('./capacity');
-const { buildCustomerEmail } = require('./confirmation');
+const { buildCustomerEmail, clampExtras, fiDate, resolveAgreedReturn } = require('./confirmation');
 const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
@@ -42,28 +42,30 @@ function toSheets(o) {
   const url = process.env.SHEETS_WEBHOOK_URL; if (!url || typeof fetch !== 'function') return;
   let ret = null; try { ret = cap.simulate(db.orders, db.settings).returns[o.id] || null; } catch {}
   const sl = o.sellerCode ? db.settings.sellers.find(x => x.code === String(o.sellerCode).toUpperCase()) : null;
+  const shownReturn = o.agreedReturnDate || o.estReturnAtBooking || ret || '';
   const extraBits = [];
-  if (o.extrasHair) extraBits.push('Karvanpoisto (koko tilaus)');
-  if (o.extrasOdor) extraBits.push('Hajunpoisto (koko tilaus)');
+  if (o.extrasHair) extraBits.push('Karvanpoisto ' + o.extrasHair + ' kpl');
+  if (o.extrasOdor) extraBits.push('Hajunpoisto (kaikki matot)');
+  if (shownReturn) extraBits.push('Palautus ' + fiDate(shownReturn));
   const notesOut = [o.notes, extraBits.join(', ')].filter(Boolean).join(' · ');
   const order = { number: o.number, createdAt: o.createdAt, channel: o.channel, sellerCode: o.sellerCode || '', sellerName: o.sellerName || (sl && sl.name) || '',
     name: o.name, phone: o.phone, email: o.email, address: o.address, postal: o.postal, city: o.city, pickupDate: o.pickupDate, pickupTime: o.pickupTime,
-    large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: ret || o.estReturnAtBooking || '', notes: notesOut, status: o.status, payment: o.payment,
+    large: o.large || 0, medium: o.medium || 0, total: o.total, commission: o.commission || 0, returnDate: shownReturn, notes: notesOut, status: o.status, payment: o.payment,
     extrasHair: o.extrasHair || 0, extrasOdor: o.extrasOdor || 0 };
   fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), order }), redirect: 'manual', signal: AbortSignal.timeout(20000) })
     .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
     .catch(e => console.error('Sheets-virhe', o.number, e.message));
 }
-async function sendEmailViaSheets({ to, subject, body, pdfHtml, pdfFilename, order }) {
+async function sendEmailViaSheets({ to, subject, body, htmlBody, pdfHtml, pdfFilename, order }) {
   const url = process.env.SHEETS_WEBHOOK_URL;
   if (!url) throw new Error('Sähköpostipalvelu ei ole käytössä (SHEETS_WEBHOOK_URL puuttuu).');
   if (typeof fetch !== 'function') throw new Error('Sähköpostipalvelu ei ole käytössä.');
-  // Asiakasviesti: lyhyt teksti ilman URL:ää + pdfHtml, josta Apps Script tekee PDF-liitteen.
+  // Asiakasviesti: plain-text body + htmlBody, ei URL:ää. pdfHtml:sta Apps Script tekee PDF-liitteen.
   // Uusi Apps Script -versio on julkaistava (Deploy → Manage deployments → New version), muuten liite jää pois. Katso OHJE-email.md.
   // Sheets-kirjaus (ei action:email) ei käytä tätä payloadia.
   const payload = JSON.stringify({
     secret: (process.env.SHEETS_SECRET || '').trim(),
-    action: 'email', to, subject, body, pdfHtml, pdfFilename, order
+    action: 'email', to, subject, body, htmlBody, pdfHtml, pdfFilename, order
   });
   // Apps Script palauttaa 302 → echo-URL; follow ei toimi POST:lle, joten haetaan Location erikseen.
   let r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual', signal: AbortSignal.timeout(25000) });
@@ -89,7 +91,7 @@ const body = req => new Promise(r => { let b = ''; req.on('data', c => { b += c;
 const isAdmin = req => req.headers['x-admin-pin'] === ADMIN_PIN;
 // Asiakkaalle näytettävä tilaus: ei myyjän provisiota eikä sisäisiä tiedostonimiä
 function publicOrder(o) { const { commission, photoFile, ...rest } = o; return rest; }
-function withReturns() { const sim = cap.simulate(db.orders, db.settings); return db.orders.map(o => ({ ...o, returnDate: sim.returns[o.id] || null })); }
+function withReturns() { const sim = cap.simulate(db.orders, db.settings); return db.orders.map(o => ({ ...o, returnDate: o.agreedReturnDate || o.estReturnAtBooking || sim.returns[o.id] || null })); }
 
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x'); const p = u.pathname;
@@ -100,7 +102,7 @@ http.createServer(async (req, res) => {
       const from = u.searchParams.get('from') || today();
       const days = cap.calendar(db.orders, db.settings, from, Math.min(90, parseInt(u.searchParams.get('days')) || 42), n, today());
       const first = days.find(d => d.ok);
-      return send(res, 200, { days: days.map(d => ({ date: d.date, ok: d.ok, reason: d.ok ? null : d.reason, returnDate: d.returnDate || null })), nextFree: first ? first.date : null });
+      return send(res, 200, { days: days.map(d => ({ date: d.date, ok: d.ok, reason: d.ok ? null : d.reason, returnDate: d.ok ? cap.addDays(d.date, 4) : null })), nextFree: first ? first.date : null });
     }
     if (p === '/api/orders' && req.method === 'POST') {
       const b = await body(req); const s = db.settings;
@@ -114,12 +116,14 @@ http.createServer(async (req, res) => {
       }
       const c = cap.check(db.orders, s, b.pickupDate, n, today());
       if (!c.ok) return send(res, 409, { error: 'Päivä ei ole enää vapaana (' + c.reason + '). Valitse toinen päivä.' });
-      const hair = Math.max(0, Math.min(1, parseInt(b.extrasHair ?? b.hairRemoval) || 0));
-      const odor = Math.max(0, Math.min(1, parseInt(b.extrasOdor ?? b.odorRemoval) || 0));
-      const extrasSum = 10 * hair + 10 * odor;
+      const channel = b.channel === 'kotimyynti' ? 'kotimyynti' : 'verkko';
+      const agreed = resolveAgreedReturn(b.pickupDate, channel === 'kotimyynti' ? b.returnDate : null);
+      if (!agreed.ok) return send(res, 400, { error: agreed.error });
+      const xtra = clampExtras(med, lg, b.extrasHair ?? b.hairRemoval, b.extrasOdor ?? b.odorRemoval);
+      const hair = xtra.extrasHair, odor = xtra.extrasOdor, extrasSum = xtra.extrasSum;
       const total = med * s.priceMedium + lg * s.priceLarge + extrasSum;
       const o = { id: crypto.randomUUID(), number: 'MR-' + new Date().getFullYear() + '-' + String(db.orders.length + 1).padStart(4, '0'),
-        createdAt: new Date().toISOString(), channel: b.channel === 'kotimyynti' ? 'kotimyynti' : 'verkko', status: 'vahvistettu',
+        createdAt: new Date().toISOString(), channel, status: 'vahvistettu',
         name: String(b.name).slice(0,120), phone: String(b.phone).slice(0,40), email: String(b.email||'').slice(0,120), address: String(b.address).slice(0,200),
         postal: String(b.postal||'').slice(0,10), city: String(b.city||'Tampere').slice(0,60), notes: String(b.notes||'').slice(0,1000),
         medium: med, large: lg, carpetsTotal: n, extrasHair: hair, extrasOdor: odor, priceMedium: s.priceMedium, priceLarge: s.priceLarge, vatPct: s.vatPct, total,
@@ -128,7 +132,7 @@ http.createServer(async (req, res) => {
         startEarly: !!b.startEarly, marketingConsent: !!b.marketingConsent, sellerCode: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).code : null,
         sellerName: b.channel === 'kotimyynti' ? findSeller(b.sellerCode).name : null,
         commission: b.channel === 'kotimyynti' ? +(cap.commission(total, n, findSeller(b.sellerCode), { large: lg, medium: med }) + 2 * (hair + odor)).toFixed(2) : 0,
-        signature: null, hasPhoto: !!(b.channel === 'kotimyynti' && b.photo), termsVersion: '2026-11', estReturnAtBooking: c.returnDate };
+        signature: null, hasPhoto: !!(channel === 'kotimyynti' && b.photo), termsVersion: '2026-11', agreedReturnDate: agreed.date, estReturnAtBooking: agreed.date };
       if (o.hasPhoto) { const mm = String(b.photo).match(/^data:image\/(\w+);base64,(.*)$/); const dir = path.join(path.dirname(DATA), 'photos'); fs.mkdirSync(dir, { recursive: true }); o.photoFile = o.id + '.' + (mm[1] === 'jpeg' ? 'jpg' : mm[1]); fs.writeFileSync(path.join(dir, o.photoFile), Buffer.from(mm[2], 'base64')); }
       db.orders.push(o); save(db); toSheets(o);
       return send(res, 201, { id: o.id });
@@ -144,7 +148,7 @@ http.createServer(async (req, res) => {
       if (Date.now() - last < 15000) return send(res, 429, { error: 'Odota hetki ennen uudelleenlähetystä.' });
       const mail = buildCustomerEmail(o);
       try {
-        await sendEmailViaSheets({ to, subject: mail.subject, body: mail.body, pdfHtml: mail.pdfHtml, pdfFilename: mail.pdfFilename, order: mail.order });
+        await sendEmailViaSheets({ to, subject: mail.subject, body: mail.body, htmlBody: mail.htmlBody, pdfHtml: mail.pdfHtml, pdfFilename: mail.pdfFilename, order: mail.order });
         emailCooldown.set(o.id, Date.now());
         return send(res, 200, { ok: true, to });
       } catch (err) {

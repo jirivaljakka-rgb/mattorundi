@@ -74,7 +74,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
       </div>
       <div class="hero-badge" data-badge>
         <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-        <div><b>Noin 3 päivää</b><span>pesu ja kuivaus tavallisesti</span></div>
+        <div><b>4 päivää</b><span>arvioitu palautus noudosta, viimeistään 6</span></div>
       </div>
     </div>
   </div>
@@ -109,7 +109,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
         <div class="num"><em>2</em>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5"/></svg></div>
         <h3>Pesemme</h3>
-        <p>Pesumenetelmä valitaan maton materiaalin mukaan. Pesu ja kuivaus kestävät tavallisesti noin 3 päivää.</p>
+        <p>Pesumenetelmä valitaan maton materiaalin mukaan. Arvioitu palautus on 4 päivää noudosta, viimeistään 6 päivää.</p>
       </div>
       <div class="step" data-step>
         <div class="num"><em>3</em>
@@ -182,14 +182,17 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
             <div class="qty-wrap"><label for="large">Isot (2,5–3,5 m²) · 54 €</label><div class="qty"><button type="button" data-q="large" data-s="-1" aria-label="Vähennä isoja">−</button><input id="large" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="large" data-s="1" aria-label="Lisää isoja">+</button></div></div>
           </div>
           <div style="margin-top:12px">
-            <p class="hint" style="margin-bottom:8px">Lisäpalvelut koskevat koko tilauksen kaikkia mattoja.</p>
-            <label class="chk"><input type="checkbox" id="extrasHair" value="1"> Karvanpoisto · 10 € (koko tilaus)</label>
-            <label class="chk"><input type="checkbox" id="extrasOdor" value="1"> Hajunpoisto · 10 € (koko tilaus)</label>
+            <div class="qty-wrap">
+              <label for="extrasHair">Karvanpoisto · 10 € / matto</label>
+              <p class="hint">Kuinka monelle matolle. Enintään keskikokoisten ja isojen mattojen määrä.</p>
+              <div class="qty"><button type="button" data-q="extrasHair" data-s="-1" aria-label="Vähennä karvanpoistoa">−</button><input id="extrasHair" type="number" min="0" value="0" inputmode="numeric"><button type="button" data-q="extrasHair" data-s="1" aria-label="Lisää karvanpoistoa">+</button></div>
+            </div>
+            <label class="chk"><input type="checkbox" id="extrasOdor" value="1"> Hajunpoisto · 10 € (koskee kaikkia mattoja)</label>
           </div>
         </fieldset>
         <fieldset>
           <legend><span class="n" aria-hidden="true">2</span>Noutopäivä</legend>
-          <p class="hint">Valitse vihreä päivä. Arvioitu palautuspäivä näkyy heti valinnan jälkeen.</p>
+          <p class="hint">Valitse vihreä päivä. Arvioitu palautus on 4 päivää noudosta ja viimeistään 6 päivää noudosta.</p>
           <div id="cal" aria-live="polite"></div>
           <div class="sum" id="sum" aria-live="polite"></div>
         </fieldset>
@@ -262,7 +265,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.document
     <p class="eyebrow" data-reveal>Usein kysyttyä</p>
     <h2 data-reveal>Kysymyksiä ja vastauksia</h2>
     <div class="faq" data-reveal>
-      <details><summary>Kauanko pesu kestää?</summary><div class="a"><p>Pesu ja kuivaus kestävät tavallisesti noin 3 päivää. Ruuhka-aikana palautus voi siirtyä myöhemmäksi. Kalenteri näyttää arvioidun palautuspäivän jo varausta tehdessä, ja palautusajasta sovitaan kanssasi erikseen.</p></div></details>
+      <details><summary>Kauanko pesu kestää?</summary><div class="a"><p>Arvioitu palautus on 4 päivää noudosta ja viimeistään 6 päivää noudosta. Kalenteri näyttää palautuspäivän jo varausta tehdessä. Kotimyynnissä päivän voi sopia välille 1–6 päivää noudosta, jos et ole kotona oletuspäivänä.</p></div></details>
       <details><summary>Milloin ja miten maksan?</summary><div class="a"><p>Maksu suoritetaan pääsääntöisesti mattojen palautuksen yhteydessä. Varausta tehdessä ei makseta mitään.</p></div></details>
       <details><summary>Mitä jos mattoani ei voi pestä?</summary><div class="a"><p>Pesumenetelmä valitaan maton materiaalin mukaan, ja tarvittaessa tehdään värinpitävyystesti. Jos mattoa ei voi pestä turvallisesti, ilmoitamme siitä ennen pesua eikä siitä veloiteta.</p></div></details>
       <details><summary>Entä isot tai erikoismatot?</summary><div class="a"><p>Yli 3,5 m² matoista ja erikoismatoista (esim. silkki, plyysi) sovitaan hinta erikseen ennen tilausta. Soita <a href="tel:+358404108581">040 41 08581</a> tai kirjoita <a href="mailto:mattorundi@gmail.com">mattorundi@gmail.com</a>.</p></div></details>

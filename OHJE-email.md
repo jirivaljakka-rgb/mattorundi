@@ -12,7 +12,8 @@ Sheets-kirjaus (payload ilman `action`) ei muutu: tilaus upsertataan kuten ennen
   "action": "email",
   "to": "asiakas@example.com",
   "subject": "Mattorundi tilausvahvistus MR-2026-0001",
-  "body": "Hei … lyhyt teksti: kiitos, nouto, summa. Ei URL-osoitetta.",
+  "body": "Hei … kiitos, että valitsit Mattorundin! … PDF-tiedostona … Nouto, arvioitu palautus, summa. Ei URL-osoitetta.",
+  "htmlBody": "<!doctype html>… sama teksti HTML-muodossa, ilman kuvia ja ilman /vahvistus-linkkiä …",
   "pdfFilename": "Mattorundi-tilausvahvistus-MR-2026-0001.pdf",
   "pdfHtml": "<!doctype html>… asiakkaan vahvistus, ehdot ja peruutuslomake …",
   "order": {
@@ -54,7 +55,7 @@ Sheets-kirjaus (payload ilman `action`) ei muutu: tilaus upsertataan kuten ennen
 
 ## Apps Script – sähköpostihaara
 
-Korvaa `doPost`:in `if (b.action === 'email')` -haara tällä. `pdfHtml` liitetään PDF:nä, ei sähköpostin HTML-runkona.
+Korvaa `doPost`:in `if (b.action === 'email')` -haara tällä. `body` on pelkkä teksti. `htmlBody` on asiakkaan näkemä HTML-viesti (`MailApp` htmlBody). `pdfHtml` liitetään PDF:nä, ei sähköpostin HTML-runkona.
 
 ```javascript
 if (b.action === 'email') {
@@ -68,6 +69,7 @@ if (b.action === 'email') {
     name: 'Mattorundi',
     replyTo: 'mattorundi@gmail.com'
   };
+  if (b.htmlBody) opts.htmlBody = String(b.htmlBody);
   if (b.pdfHtml) {
     var pdf = Utilities.newBlob(String(b.pdfHtml), 'text/html', 'vahvistus.html').getAs('application/pdf');
     pdf.setName(pdfName);
