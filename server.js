@@ -1,5 +1,6 @@
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const cap = require('./capacity');
+const { buildCustomerEmail } = require('./confirmation');
 const PORT = process.env.PORT || 8080;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const ADMIN_PIN = process.env.ADMIN_PIN || 'matto2026';
@@ -53,11 +54,17 @@ function toSheets(o) {
     .then(r => { if (r.status >= 400) console.error('Sheets HTTP', r.status, o.number); })
     .catch(e => console.error('Sheets-virhe', o.number, e.message));
 }
-async function sendEmailViaSheets({ to, subject, body }) {
+async function sendEmailViaSheets({ to, subject, body, pdfHtml, pdfFilename, order }) {
   const url = process.env.SHEETS_WEBHOOK_URL;
   if (!url) throw new Error('Sähköpostipalvelu ei ole käytössä (SHEETS_WEBHOOK_URL puuttuu).');
   if (typeof fetch !== 'function') throw new Error('Sähköpostipalvelu ei ole käytössä.');
-  const payload = JSON.stringify({ secret: (process.env.SHEETS_SECRET || '').trim(), action: 'email', to, subject, body });
+  // Asiakasviesti: lyhyt teksti ilman URL:ää + pdfHtml, josta Apps Script tekee PDF-liitteen.
+  // Uusi Apps Script -versio on julkaistava (Deploy → Manage deployments → New version), muuten liite jää pois. Katso OHJE-email.md.
+  // Sheets-kirjaus (ei action:email) ei käytä tätä payloadia.
+  const payload = JSON.stringify({
+    secret: (process.env.SHEETS_SECRET || '').trim(),
+    action: 'email', to, subject, body, pdfHtml, pdfFilename, order
+  });
   // Apps Script palauttaa 302 → echo-URL; follow ei toimi POST:lle, joten haetaan Location erikseen.
   let r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, redirect: 'manual', signal: AbortSignal.timeout(25000) });
   if (r.status >= 300 && r.status < 400) {
@@ -135,24 +142,9 @@ http.createServer(async (req, res) => {
       if (!to || !to.includes('@')) return send(res, 400, { error: 'Asiakkaalla ei ole sähköpostiosoitetta.' });
       const last = emailCooldown.get(o.id) || 0;
       if (Date.now() - last < 15000) return send(res, 429, { error: 'Odota hetki ennen uudelleenlähetystä.' });
-      const link = (process.env.PUBLIC_BASE_URL || ('https://' + (req.headers.host || 'mattorundi.onrender.com'))).replace(/\/$/, '') + '/vahvistus?id=' + o.id;
-      const subject = 'Mattorundi tilausvahvistus ' + o.number;
-      const bodyText = [
-        'Hei ' + o.name + ',',
-        '',
-        'kiitos tilauksesta! Tilausvahvistuksesi, ehdot ja peruutuslomake:',
-        link,
-        '',
-        'Nouto: ' + o.pickupDate + (o.pickupTime ? ' ' + o.pickupTime : '') + '.',
-        'Arvioitu palautus: ' + (o.returnDate || o.estReturnAtBooking || '') + '.',
-        'Summa: ' + o.total + ' € (sis. ALV).',
-        '',
-        'Ystävällisin terveisin,',
-        'Mattorundi / Valaja Team Osk',
-        'mattorundi@gmail.com · 040 41 08581'
-      ].join('\n');
+      const mail = buildCustomerEmail(o);
       try {
-        await sendEmailViaSheets({ to, subject, body: bodyText });
+        await sendEmailViaSheets({ to, subject: mail.subject, body: mail.body, pdfHtml: mail.pdfHtml, pdfFilename: mail.pdfFilename, order: mail.order });
         emailCooldown.set(o.id, Date.now());
         return send(res, 200, { ok: true, to });
       } catch (err) {

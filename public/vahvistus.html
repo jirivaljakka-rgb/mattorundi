@@ -1,17 +1,17 @@
 <!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Tilausvahvistus – Mattorundi</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap"><link rel="stylesheet" href="styles.css"></head><body>
 <header class="top"><div class="wrap"><a class="logo" href="/"><b>MATTO</b>RUNDI</a></div></header>
-<section><div class="wrap"><div class="card" id="c">Ladataan…</div>
-<div class="noprint" id="actions" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:24px">
-  <button class="btn btn-g" type="button" onclick="print()" style="flex:1 1 220px">Tulosta / tallenna PDF</button>
-  <button class="btn btn-n" type="button" id="copyLink" style="flex:1 1 220px">Kopioi linkki asiakkaalle</button>
-  <button class="btn btn-n" type="button" id="mail" style="flex:1 1 220px">Lähetä sähköpostilla</button>
+<section><div class="wrap">
+<div class="noprint" id="actions" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px">
+  <button class="btn btn-g" type="button" id="mail" style="flex:1 1 220px">Lähetä sähköpostilla</button>
+  <button class="btn btn-n" type="button" onclick="print()" style="flex:1 1 220px">Tulosta / tallenna PDF</button>
 </div>
-<p class="noprint" id="mailMsg" role="status" aria-live="polite" style="margin-top:10px;font-size:14px"></p>
+<p class="noprint" style="margin:0 0 8px;font-size:14px">Asiakas saa lyhyen viestin ja tilausvahvistuksen PDF-liitteenä. Älä lähetä tätä sivua asiakkaalle.</p>
+<p class="noprint" id="mailMsg" role="status" aria-live="polite" style="margin:0 0 16px;font-size:14px"></p>
+<div class="card" id="c">Ladataan…</div>
 </div></section>
 <script src="common.js"></script><script src="terms.js"></script><script>
 (async()=>{
 const id=new URLSearchParams(location.search).get('id');
-$('#copyLink').onclick=()=>{navigator.clipboard.writeText(location.href);$('#copyLink').textContent='Linkki kopioitu'};
 try{
 const o=await api('/api/orders/'+id);
 const rows=[
@@ -31,13 +31,13 @@ ${o.signature?`<p><b>Asiakkaan allekirjoitus:</b><br><img src="${o.signature}" s
 <div class="pb"><h2>Tilausehdot</h2>${TERMS_HTML}</div><div class="pb" style="border-top:2px dashed #999;margin-top:24px;padding-top:12px">${CANCEL_FORM_HTML(o)}</div>`;
 
 const mailBtn=$('#mail'), mailMsg=$('#mailMsg');
-if(!o.email){ mailBtn.disabled=true; mailBtn.title='Tilauksella ei ole sähköpostiosoitetta'; mailMsg.textContent='Asiakkaalla ei ole sähköpostia tilauksella – lisää osoite tai kopioi linkki.'; }
+if(!o.email){ mailBtn.disabled=true; mailBtn.title='Tilauksella ei ole sähköpostiosoitetta'; mailMsg.textContent='Asiakkaalla ei ole sähköpostia tilauksella. Tulosta vahvistus tai lisää sähköpostiosoite.'; }
 mailBtn.onclick=async()=>{
   if(!o.email){ mailMsg.innerHTML='<span class="err">Tilauksella ei ole sähköpostiosoitetta.</span>'; return; }
   mailBtn.disabled=true; mailMsg.textContent='Lähetetään…';
   try{
     await api('/api/orders/'+id+'/email',{method:'POST',body:JSON.stringify({})});
-    mailMsg.innerHTML='<span style="color:var(--green,#0F3B2C);font-weight:700">Lähetetty osoitteeseen '+o.email+' (Mattorundi)</span>';
+    mailMsg.innerHTML='<span style="color:var(--green,#0F3B2C);font-weight:700">Lähetetty osoitteeseen '+o.email+'. Asiakas saa tilausvahvistuksen PDF-liitteenä.</span>';
     mailBtn.textContent='Lähetetty';
   }catch(err){
     mailMsg.innerHTML='<span class="err">'+(err.message||'Lähetys epäonnistui')+'</span>';

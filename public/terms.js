@@ -38,3 +38,4 @@ const CANCEL_FORM_HTML = o => `
 <p>Kuluttajan osoite: ${o ? o.address + ', ' + (o.postal || '') + ' ' + (o.city || '') : '_______________________________'}</p>
 <p>Kuluttajan allekirjoitus (vain jos lomake tehdään paperilla): _______________________________</p>
 <p>Päiväys: ____________</p>`;
+if (typeof module !== 'undefined' && module.exports) module.exports = { COMPANY, TERMS_HTML, CANCEL_FORM_HTML };
